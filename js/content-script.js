@@ -2,17 +2,27 @@ document.addEventListener('DOMContentLoaded', function () {
     console.log('天天购物插件');
     $(document).ready(function () {
         setTimeout(() => {
-            if (location.host === 'detail.tmall.com') {
+            if (location.host.includes('detail.tmall')) {
                 dealTM();
             } else if (location.host === 'buy.tmall.com') {
-                getPrice();
-                alert(parseQuery(document.referrer).id) // 商品ID)
+                let price = getPrice();
+                if (!price) {
+                    setInterval(() => {
+                        price = getPrice();
+                        alert(parseQuery(document.referrer).id) // 商品ID)
+                    }, 500)
+                }
             }
             else if (location.host === 'item.taobao.com') {
                 dealTB();
             } else if (location.host === 'buy.taobao.com') {
-                getPrice();
-                alert(parseQuery(document.referrer).id) // 商品ID
+                let price = getPrice();
+                if (!price) {
+                    setInterval(() => {
+                        price = getPrice();
+                        alert(parseQuery(document.referrer).id) // 商品ID
+                    })
+                }
             }
         }, 1000)
     });
@@ -46,7 +56,10 @@ function dealTM() {
             if (liElem && liElem[0] && liElem[0].textContent.includes('已选中')) {
 
             } else if (liElem && liElem[0]) {
-                liElem[0].getElementsByTagName('a')[0].click()
+                let random = Math.round(Math.random() * 8);//模拟用户点击 随机时间
+                setTimeout(() => {
+                    liElem[0].getElementsByTagName('a')[0].click()
+                }, 500 + random * 800)
             }
         }
     });
@@ -85,7 +98,11 @@ function dealTB() {
             if (liElem && liElem[0] && liElem[0].classList.value.includes('tb-selected')) {
 
             } else if (liElem && liElem[0]) {
-                liElem[0].getElementsByTagName('a')[0].click()
+                // liElem[0].getElementsByTagName('a')[0].click()
+                let random = Math.round(Math.random() * 8);//模拟用户点击 随机时间
+                setTimeout(() => {
+                    liElem[0].getElementsByTagName('a')[0].click()
+                }, 500 + random * 800)
             }
         }
     });
@@ -103,6 +120,7 @@ function getPrice() {
     // alert($('.label__header').html())
     // alert($('.label__header').parent().children().contents('￥').html())
     alert($('.label__header').parent().children()[1].innerHTML)
+    return $('.label__header').parent().children()[1].innerHTML
 }
 
 /**
