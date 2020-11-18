@@ -4,20 +4,25 @@ document.addEventListener('DOMContentLoaded', function () {
         setTimeout(() => {
             if (location.host.includes('detail.tmall')) {
                 dealTM();
-            } else if (location.host === 'buy.tmall.com') {
+            } else if (location.host.includes('buy.tmall')) {
+                //如果有授权的话
+                // auth-btm
+
+                closeAuthWindow();
+
                 let price = getPrice();
-                if (!price) {
+                if (!price || price === '0.00') {
                     setInterval(() => {
                         price = getPrice();
                         alert(parseQuery(document.referrer).id) // 商品ID)
-                    }, 500)
+                    }, 3000)
                 }
             }
             else if (location.host === 'item.taobao.com') {
                 dealTB();
             } else if (location.host === 'buy.taobao.com') {
                 let price = getPrice();
-                if (!price) {
+                if (!price || price === '0.00') {
                     setInterval(() => {
                         price = getPrice();
                         alert(parseQuery(document.referrer).id) // 商品ID
@@ -117,10 +122,14 @@ function dealTB() {
  * 获取淘宝页面价格
  */
 function getPrice() {
-    // alert($('.label__header').html())
-    // alert($('.label__header').parent().children().contents('￥').html())
-    alert($('.label__header').parent().children()[1].innerHTML)
-    return $('.label__header').parent().children()[1].innerHTML
+    let price;
+    if (location.host.includes('buy.tmall.hk')) {//如果是天猫Hk $('.label__header:contains(合计)').parent().children()[1]
+        price = $('.label__header:contains(合计)').parent().children()[1].innerHTML
+    } else {
+        price = $('.label__header').parent().children()[1].innerHTML
+    }
+    alert(price)
+    return price
 }
 
 /**
@@ -143,4 +152,15 @@ function parseQuery(str) {
         else query[first] = [query[first], second];
     }
     return query;
+}
+
+/**
+ * 关闭授权
+ *
+ */
+async function closeAuthWindow() {
+    await setTimeout(() => {
+        // $('.auth-btm').contents('授权').click()
+        $('.auth-btm').children()[1].click()
+    }, 800)
 }
