@@ -1,9 +1,10 @@
 document.addEventListener('DOMContentLoaded', function () {
     console.log('天天购物插件');
+    createHintMessage()
     $(document).ready(function () {
         setTimeout(() => {
             if (location.host.includes('detail.tmall')) {
-                createHintMessage()
+
                 dealTM();
             } else if (location.host.includes('buy.tmall')) {
                 //如果有授权的话
@@ -21,7 +22,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
             }
             else if (location.host === 'item.taobao.com') {
-                createHintMessage()
                 dealTB();
             } else if (location.host === 'buy.taobao.com') {
                 let price = getFinallyPrice();
@@ -34,14 +34,17 @@ document.addEventListener('DOMContentLoaded', function () {
                     }, 8000)//8s之后还未获取到，就说明账号被限制了
                 }
             } else if (location.host === "uland.taobao.com") { //粉丝福利购，领券
+                setTimeout(() => {
+                    //立即领券
+                    $('div:contains(立即领券)').parent().click()
+                }, 1500)
+            } else if (location.host === 's.click.taobao.com') {
                 let parseObj = parseQuery(location.href);
                 if (parseObj.did) {
                     chrome.storage.sync.set({"STORAGE_KEY": parseObj.did}, function () {
                         console.log('Value is set to ' + parseObj.did);
                     });
                 }
-                //立即领券
-                $('div:contains(立即领券)').parent().click()
             }
         }, 1000)
     });
@@ -64,7 +67,7 @@ function createHintMessage() {
     inntHtml += '' + title + ''
     inntHtml += '<div id="popWinClose" style="width: 28px; height: 28px; cursor: pointer; position: absolute; top: -12px; right: -9px; background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABwAAAAcCAYAAAByDd+UAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAJeSURBVEhLvZbPq2lRFMf9B4bSTTIxZiBSMlCI9ycoKX+Bod7w/il3YIL4NyhFmYmBKD2Sp0ix3vqes/e529n74t33Op9astevr3PO2tvxvcLtdquzfbAtyAV8IlYX6d+DG7yxvbP9Fr2fglxR8ybavAYX/GD7Jfr8NahFD9HuMZz4U9Q5jEYjqlarFA6HiVPuDD7EkOMGvTjna9xi8/mcstmsJvKVIRc1Kl+K4haIHItut0t+v9/Y+JGhBrUq6M2xT9iBAXGeGQrY/U+miqI3NNhvw4t3EbNuyXeuzG3ood5eaLDfhhfO6JueWbPZtGKFQkGLNRoN2u/3FI/HtRh6SaDBPkusLnzWpMlkaRC7XC5WfLVaUTqddmKVSoVOp5MVG4/HlEql7mph6vRCC4IfYm2Nt7vAzW63o2KxSLVaja7Xq/DatFotrR49JdCCoHNcmfZZPp+n9XotMmxwVVwnVjbD4ZAikYhWj54SaN1dgjtZWiaToe12K7J0JpOJUUyaykuCsFwuR8fjUWR+slgsKBAIGGukqbwsiGdmElwul5RIJIw10lReEsQ0ns9nkaVzOBys226qhak8HRrsM7ktJLPZjDabjVjZYLBKpZJWrw0NfzzcFvj1KtPp1HpmsVjM2iIq/X5fqzdti4cbHycINjUYDAYUCoWcGA4BHAag1+tRMBi8q4VpGx/wl4dHWzKZpHa7TdFoVIuVy2XqdDrGSTUebYAXnh/e3v49AXZ49wcs4YB3rxgStyjApGG8TfsUPsTUaZQ8FZPgFrB585oo4QLvXoTdcIP/9Krv8/0BDUSOirKWU6wAAAAASUVORK5CYII=);"></div>'
     inntHtml += '</div>'
-    inntHtml += `<div id="goods_price">当前商品价格，获取价格之后会自动关闭</div>`
+    inntHtml += `<div id="goods_price">正在获取商品价格，获取价格，上报完毕会自动关闭页面</div>`
     $("body").append(inntHtml);
     $("#popWinClose").click(function () {
         $("#maskTop").hide()
@@ -88,7 +91,7 @@ function createHintMessage() {
  */
 async function getData(storage_key, price) {
     //将获取到的价格显示到提示框里边
-    $('#goods_price').text(`当前商品价格${price}，正在上报价格，上报完毕之后会自动关闭`)
+    $('#goods_price').html(`当前商品价格<font style="font-size: 32px;color: RED;">${price}</font>，<br>正在上报价格，上报完毕之后会自动关闭`)
     const result = await getLocalStorageValue(storage_key);
 
     setTimeout(() => {
