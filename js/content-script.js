@@ -1,7 +1,5 @@
 document.addEventListener('DOMContentLoaded', function () {
     console.log('天天购物插件');
-    // getData("STORAGE_KEY");
-
     chrome.storage.onChanged.addListener(function (changes, namespace) {
         for (key in changes) {
             var storageChange = changes[key];
@@ -28,7 +26,10 @@ document.addEventListener('DOMContentLoaded', function () {
                     setInterval(() => {
                         price = getPrice();
                         alert(parseQuery(document.referrer).id) // 商品ID)
+                        getData("STORAGE_KEY", price)
                     }, 1200)
+                } else {
+                    getData("STORAGE_KEY", price)
                 }
             }
             else if (location.host === 'item.taobao.com') {
@@ -39,18 +40,20 @@ document.addEventListener('DOMContentLoaded', function () {
                     setInterval(() => {
                         price = getPrice();
                         alert(parseQuery(document.referrer).id) // 商品ID
+                        getData("STORAGE_KEY", price)
                     })
+                } else {
+                    getData("STORAGE_KEY", price)
                 }
             } else if (location.host === "uland.taobao.com") { //粉丝福利购，领券
-                //立即领券
-                $('div:contains(立即领券)').parent().click()
-
                 let parseObj = parseQuery(location.href);
                 if (parseObj.did) {
                     chrome.storage.sync.set({"STORAGE_KEY": parseObj.did}, function () {
                         console.log('Value is set to ' + parseObj.did);
                     });
                 }
+                //立即领券
+                $('div:contains(立即领券)').parent().click()
             }
         }, 1000)
     });
@@ -60,9 +63,20 @@ document.addEventListener('DOMContentLoaded', function () {
  * 获取storage的值
  * @returns {Promise<void>}
  */
-async function getData(storage_key) {
+async function getData(storage_key, price) {
     const result = await getLocalStorageValue(storage_key);
-    alert(JSON.stringify(result))
+    chrome.runtime.sendMessage({
+        type: "request",
+        url: 'http://api.tiantiandr.cn/admin/v1/disclosure/create_expand',
+        body: {
+            "did": result["STORAGE_KEY"],
+            "e_type": 0,
+            "e_name": "capture_price",
+            "e_value": price
+        },
+        method: "POST"
+    });
+    // alert(JSON.stringify(result))
 }
 
 /**
@@ -193,8 +207,8 @@ function isTBSkuClickFinished(element, endSkuIndex) {
                 let demo = window.getComputedStyle($('.tb-sure')[0], null);
                 if (demo.display !== 'none') {
                     setTimeout(() => {
+                        $(".tb-sure-continue").getElementsByTagName('a')[0].click()
                     }, 200 + random * 200)
-                    $(".tb-sure-continue").getElementsByTagName('a')[0].click()
                 }
 
                 setTimeout(() => {
@@ -217,7 +231,6 @@ function getPrice() {
     //     price = $('.label__header').parent().children()[1].innerHTML
     // }
     let price = $('.label__header:contains(合计)').parent().children()[1].innerHTML
-    alert(price)
     return price
 }
 
