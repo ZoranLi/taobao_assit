@@ -7,7 +7,6 @@ document.addEventListener('DOMContentLoaded', function () {
             } else if (location.host.includes('buy.tmall')) {
                 //如果有授权的话
                 // auth-btm
-
                 closeAuthWindow();
 
                 let price = getPrice();
@@ -15,7 +14,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     setInterval(() => {
                         price = getPrice();
                         alert(parseQuery(document.referrer).id) // 商品ID)
-                    }, 3000)
+                    }, 1200)
                 }
             }
             else if (location.host === 'item.taobao.com') {
@@ -38,96 +37,126 @@ document.addEventListener('DOMContentLoaded', function () {
  */
 function dealTM() {
     let endSkuIndex;
-    $('.tb-sku').children().each(function (i, n) {
+    let skuContianer = $('.tb-sku');
+
+    //数量之前都是规格，看数量位置是第几个
+    skuContianer.children().each(function (i, n) {
         let child = $(n)
         let category = child.find(".tb-metatit").html()
         if (category === '数量') {
             endSkuIndex = i;
         }
     });
-    $('.tb-sku').children().each(function (i, n) {
-        if (i < endSkuIndex) {
-            let liElem = n.getElementsByTagName('li');
-            let filterList = [];
-            Object.keys(liElem).filter((index) => {
-                const g = liElem[index]
-                if (g.classList.value !== 'tb-out-of-stock') {
-                    filterList.push(g)
-                }
-            });
 
-            liElem = filterList;
-
-            if (liElem && liElem[0] && liElem[0].textContent.includes('已选中')) {
-
-            } else if (liElem && liElem[0]) {
-                let random = Math.round(Math.random() * 8);//模拟用户点击 随机时间
-                setTimeout(() => {
-                    liElem[0].getElementsByTagName('a')[0].click()
-                }, 500 + random * 800)
-            }
-        }
-    });
-
+    isTMSkuClickFinished(skuContianer, endSkuIndex)
     setTimeout(() => {
+        //去购买之前再检查一遍 规格有没有漏掉的
         $('[data-addfastbuy]')[0].click();
     }, 2000)
 }
 
+/**
+ * 天猫sku是否都选完了
+ * @param element
+ */
+function isTMSkuClickFinished(element, endSkuIndex) {
+    element.children().each(function (i, n) {
+        if (i < endSkuIndex) {
+            let liElem = n.getElementsByTagName('li');
+            liElem = filterSaleOut(liElem);
+            if (liElem && liElem[0] && liElem[0].textContent.includes('已选中')) {
+
+            } else if (liElem && liElem[0]) {
+                liElem[0].getElementsByTagName('a')[0].click()
+                let random = Math.round(Math.random() * 8);//模拟用户点击 随机时间
+                setTimeout(() => {
+                    isTMSkuClickFinished(element, endSkuIndex)
+                }, 200 + 200 * random)
+            }
+        }
+    });
+}
+
+/**
+ * 过滤掉没有库存的 规格
+ */
+function filterSaleOut(liElem) {
+    let filterList = [];
+    Object.keys(liElem).filter((index) => {
+        const g = liElem[index]
+        if (g.classList.value !== 'tb-out-of-stock') {
+            filterList.push(g)
+        }
+    });
+    return filterList
+}
+
+/**
+ * 延时等待函数
+ * @param time
+ * @returns {Promise<any>}
+ */
+function sleep(time) {
+    return new Promise((resolve) => setTimeout(resolve, time));
+}
 
 /**
  *处理淘宝详情
  */
 function dealTB() {
     let endSkuIndex;
-    $('.tb-skin').children().each(function (i, n) {
+    let skuContainer = $('.tb-skin')
+
+    skuContainer.children().each(function (i, n) {
         let child = $(n)
         let category = child.find(".tb-property-type").html()
         if (category === '数量') {
             endSkuIndex = i;
         }
     });
-    $('.tb-skin').children().each(function (i, n) {
-        if (i < endSkuIndex) {
-            let liElem = n.getElementsByTagName('li');
-            let filterList = [];
-            Object.keys(liElem).filter((index) => {
-                const g = liElem[index]
-                if (g.classList.value !== 'tb-out-of-stock') {
-                    filterList.push(g)
-                }
-            });
 
-            liElem = filterList;
-
-            if (liElem && liElem[0] && liElem[0].classList.value.includes('tb-selected')) {
-
-            } else if (liElem && liElem[0]) {
-                // liElem[0].getElementsByTagName('a')[0].click()
-                let random = Math.round(Math.random() * 8);//模拟用户点击 随机时间
-                setTimeout(() => {
-                    liElem[0].getElementsByTagName('a')[0].click()
-                }, 500 + random * 800)
-            }
-        }
-    });
+    isTBSkuClickFinished(skuContainer, endSkuIndex)
 
     setTimeout(() => {
         $('[data-addfastbuy]')[0].click();
-    }, 2000)
-
+    }, 1000)
 }
 
+
 /**
- * 获取淘宝页面价格
+ * 淘宝sku是否都选完了
+ * @param element
+ */
+function isTBSkuClickFinished(element, endSkuIndex) {
+    element.children().each(function (i, n) {
+        if (i < endSkuIndex) {
+            let liElem = n.getElementsByTagName('li');
+            liElem = filterSaleOut(liElem);
+            if (liElem && liElem[0] && liElem[0].classList.value.includes('tb-selected')) {
+
+            } else if (liElem && liElem[0]) {
+                liElem[0].getElementsByTagName('a')[0].click()
+                let random = Math.round(Math.random() * 8);//模拟用户点击 随机时间
+                setTimeout(() => {
+                    isTBSkuClickFinished(element, endSkuIndex)
+                }, 200 + random * 200)
+            }
+        }
+    });
+}
+
+
+/**
+ * 获取结算页面价格
  */
 function getPrice() {
-    let price;
-    if (location.host.includes('buy.tmall.hk')) {//如果是天猫Hk $('.label__header:contains(合计)').parent().children()[1]
-        price = $('.label__header:contains(合计)').parent().children()[1].innerHTML
-    } else {
-        price = $('.label__header').parent().children()[1].innerHTML
-    }
+    // let price;
+    // if (location.host.includes('buy.tmall.hk')) {//如果是天猫Hk $('.label__header:contains(合计)').parent().children()[1]
+    //     price = $('.label__header:contains(合计)').parent().children()[1].innerHTML
+    // } else {
+    //     price = $('.label__header').parent().children()[1].innerHTML
+    // }
+    let price = $('.label__header:contains(合计)').parent().children()[1].innerHTML
     alert(price)
     return price
 }
