@@ -1,45 +1,37 @@
 document.addEventListener('DOMContentLoaded', function () {
     console.log('天天购物插件');
-    createHintMessage('aa')
     $(document).ready(function () {
         setTimeout(() => {
             if (location.host.includes('detail.tmall')) {
+                createHintMessage()
                 dealTM();
             } else if (location.host.includes('buy.tmall')) {
                 //如果有授权的话
                 // auth-btm
                 closeAuthWindow();
 
-                let price = getPrice();
-                if (!price || price === '0.00') {
-                    setTimeout(() => {
-                        price = getPrice();
-                        if (!price || price === '0.00') {
-                            $('#goods_price').text (`该商品对当前设备和账号做限制了`)
-                        } else {
-                            getData("STORAGE_KEY", price)
-                        }
-                    }, 1200)
-                } else {
+                let price = getFinallyPrice();
+                if (price) {
                     getData("STORAGE_KEY", price)
+                } else {
+                    setTimeout(() => {
+                        $('#goods_price').text(`该商品对当前设备和账号做限制了`)
+
+                    }, 8000)//8s之后还未获取到，就说明账号被限制了
                 }
             }
             else if (location.host === 'item.taobao.com') {
+                createHintMessage()
                 dealTB();
             } else if (location.host === 'buy.taobao.com') {
-                let price = getPrice();
-                if (!price || price === '0.00') {
-                    setInterval(() => {
-                        price = getPrice();
-                        // alert(parseQuery(document.referrer).id) // 商品ID
-                        if (!price || price === '0.00') {
-
-                        } else {
-                            getData("STORAGE_KEY", price)
-                        }
-                    })
-                } else {
+                let price = getFinallyPrice();
+                if (price) {
                     getData("STORAGE_KEY", price)
+                } else {
+                    setTimeout(() => {
+                        $('#goods_price').text(`该商品对当前设备和账号做限制了`)
+
+                    }, 8000)//8s之后还未获取到，就说明账号被限制了
                 }
             } else if (location.host === "uland.taobao.com") { //粉丝福利购，领券
                 let parseObj = parseQuery(location.href);
@@ -59,7 +51,7 @@ document.addEventListener('DOMContentLoaded', function () {
 /**
  * 创建提示信息
  */
-function createHintMessage(message) {
+function createHintMessage() {
     let width = "300";
     let height = "200";
     let title = "<font color=red>正在获取价格</font>"
@@ -99,22 +91,26 @@ async function getData(storage_key, price) {
     $('#goods_price').text(`当前商品价格${price}，正在上报价格，上报完毕之后会自动关闭`)
     const result = await getLocalStorageValue(storage_key);
 
-    chrome.runtime.sendMessage({
-        type: "request",
-        url: 'http://api.tiantiandr.cn/admin/v1/disclosure/create_expand',
-        body: {
-            "did": result["STORAGE_KEY"],
-            "e_type": 0,
-            "e_name": "capture_price",
-            "e_value": price
-        },
-        method: "POST"
-    },
-    function (res) {
+    setTimeout(() => {
         chrome.runtime.sendMessage({
-            type: "close"
-        });
-    });
+                type: "request",
+                url: 'http://api.tiantiandr.cn/admin/v1/disclosure/create_expand',
+                body: {
+                    "did": result["STORAGE_KEY"],
+                    "e_type": 0,
+                    "e_name": "capture_price",
+                    "e_value": price
+                },
+                method: "POST"
+            },
+            function (res) {
+                $('#goods_price').text(`上报完毕`)
+                chrome.runtime.sendMessage({
+                    type: "close"
+                });
+            });
+    }, 3000)
+
 }
 
 /**
@@ -258,17 +254,20 @@ function isTBSkuClickFinished(element, endSkuIndex) {
 }
 
 
-/**
- * 获取结算页面价格
- */
-function getPrice() {
+function getFinallyPrice() {
     if ($('.label__header:contains(合计)') && $('.label__header:contains(合计)').parent() && $('.label__header:contains(合计)').parent().children()[1]) {
         let price = $('.label__header:contains(合计)').parent().children()[1].innerHTML;
-        $('#goods_price').text(`获取到当前价格为：${price}`);
-        return price
+        if (!price || price === '0.00') {
+            setTimeout(() => {
+                getFinallyPrice()//500毫秒之后再次获取
+            }, 500)
+        } else {
+            return price
+        }
     } else {
-        $('#goods_price').text(`该商品对当前设备和账号做限制了`);
-        return null
+        setTimeout(() => {
+            getFinallyPrice()//500毫秒之后再次获取
+        }, 500)
     }
 }
 
@@ -295,12 +294,13 @@ function parseQuery(str) {
 }
 
 /**
- * 关闭授权
- *
+ * 天猫hk点击授权
  */
 async function closeAuthWindow() {
-    await setTimeout(() => {
-        // $('.auth-btm').contents('授权').click()
-        $('.auth-btm').children()[1].click()
-    }, 800)
+    if ($('.auth-btm') && $('.auth-btm').children() && $('.auth-btm').children()[1]) {
+        await setTimeout(() => {
+            // $('.auth-btm').contents('授权').click()
+            $('.auth-btm').children()[1].click()
+        }, 800)
+    }
 }
