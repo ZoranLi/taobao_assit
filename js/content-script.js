@@ -1,5 +1,19 @@
 document.addEventListener('DOMContentLoaded', function () {
     console.log('天天购物插件');
+    // getData("STORAGE_KEY");
+
+    chrome.storage.onChanged.addListener(function (changes, namespace) {
+        for (key in changes) {
+            var storageChange = changes[key];
+            console.log('存储键“%s”（位于“%s”命名空间中）已更改。' +
+                '原来的值为“%s”，新的值为“%s”。',
+                key,
+                namespace,
+                storageChange.oldValue,
+                storageChange.newValue);
+        }
+    });
+
     $(document).ready(function () {
         setTimeout(() => {
             if (location.host.includes('detail.tmall')) {
@@ -30,10 +44,44 @@ document.addEventListener('DOMContentLoaded', function () {
             } else if (location.host === "uland.taobao.com") { //粉丝福利购，领券
                 //立即领券
                 $('div:contains(立即领券)').parent().click()
+
+                let parseObj = parseQuery(location.href);
+                if (parseObj.did) {
+                    chrome.storage.sync.set({"STORAGE_KEY": parseObj.did}, function () {
+                        console.log('Value is set to ' + parseObj.did);
+                    });
+                }
             }
         }, 1000)
     });
 });
+
+/**
+ * 获取storage的值
+ * @returns {Promise<void>}
+ */
+async function getData(storage_key) {
+    const result = await getLocalStorageValue(storage_key);
+    alert(JSON.stringify(result))
+}
+
+/**
+ * 获取storage的值
+ * @param key
+ * @returns {Promise<any>}
+ */
+async function getLocalStorageValue(key) {
+    return new Promise((resolve, reject) => {
+        try {
+            chrome.storage.sync.get(key, function (value) {
+                resolve(value);
+            })
+        }
+        catch (ex) {
+            reject(ex);
+        }
+    });
+}
 
 /**
  *处理天猫详情
@@ -138,8 +186,17 @@ function isTBSkuClickFinished(element, endSkuIndex) {
             if (liElem && liElem[0] && liElem[0].classList.value.includes('tb-selected')) {
 
             } else if (liElem && liElem[0]) {
-                liElem[0].getElementsByTagName('a')[0].click()
                 let random = Math.round(Math.random() * 8);//模拟用户点击 随机时间
+
+                liElem[0].getElementsByTagName('a')[0].click()
+
+                let demo = window.getComputedStyle($('.tb-sure')[0], null);
+                if (demo.display !== 'none') {
+                    setTimeout(() => {
+                    }, 200 + random * 200)
+                    $(".tb-sure-continue").getElementsByTagName('a')[0].click()
+                }
+
                 setTimeout(() => {
                     isTBSkuClickFinished(element, endSkuIndex)
                 }, 200 + random * 200)
