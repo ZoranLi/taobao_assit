@@ -1,17 +1,6 @@
 document.addEventListener('DOMContentLoaded', function () {
     console.log('天天购物插件');
-    chrome.storage.onChanged.addListener(function (changes, namespace) {
-        for (key in changes) {
-            var storageChange = changes[key];
-            console.log('存储键“%s”（位于“%s”命名空间中）已更改。' +
-                '原来的值为“%s”，新的值为“%s”。',
-                key,
-                namespace,
-                storageChange.oldValue,
-                storageChange.newValue);
-        }
-    });
-
+    createHintMessage('aa')
     $(document).ready(function () {
         setTimeout(() => {
             if (location.host.includes('detail.tmall')) {
@@ -23,10 +12,13 @@ document.addEventListener('DOMContentLoaded', function () {
 
                 let price = getPrice();
                 if (!price || price === '0.00') {
-                    setInterval(() => {
+                    setTimeout(() => {
                         price = getPrice();
-                        alert(parseQuery(document.referrer).id) // 商品ID)
-                        getData("STORAGE_KEY", price)
+                        if (!price || price === '0.00') {
+                            $('#goods_price').text (`该商品对当前设备和账号做限制了`)
+                        } else {
+                            getData("STORAGE_KEY", price)
+                        }
                     }, 1200)
                 } else {
                     getData("STORAGE_KEY", price)
@@ -39,8 +31,12 @@ document.addEventListener('DOMContentLoaded', function () {
                 if (!price || price === '0.00') {
                     setInterval(() => {
                         price = getPrice();
-                        alert(parseQuery(document.referrer).id) // 商品ID
-                        getData("STORAGE_KEY", price)
+                        // alert(parseQuery(document.referrer).id) // 商品ID
+                        if (!price || price === '0.00') {
+
+                        } else {
+                            getData("STORAGE_KEY", price)
+                        }
                     })
                 } else {
                     getData("STORAGE_KEY", price)
@@ -59,12 +55,50 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 });
 
+
+/**
+ * 创建提示信息
+ */
+function createHintMessage(message) {
+    let width = "300";
+    let height = "200";
+    let title = "<font color=red>正在获取价格</font>"
+    let iframeHeight = height - 52;
+    let marginLeft = 0;
+    let marginTop = "0";
+    let inntHtml = '';
+    inntHtml += '<div id="maskTop" style="width: ' + width + 'px; height: ' + height + 'px; border: #999999 1px solid; background: #fff; color: #333; position: fixed; top: 50%; left: 15px; margin-left: -' + marginLeft + 'px; margin-top: -' + marginTop + 'px; z-index: 999999; filter: progid:DXImageTransform.Microsoft.Shadow(color=#909090,direction=120,strength=4); -moz-box-shadow: 2px 2px 10px #909090; -webkit-box-shadow: 2px 2px 10px #909090; box-shadow: 2px 2px 10px #909090;">'
+    inntHtml += '<div id="maskTitle" style="height: 50px;text-align: center; line-height: 50px; font-family: Microsoft Yahei; font-size: 20px; color: #333333; padding-left: 20px; background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAyCAYAAABlG0p9AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAABvSURBVEhL1cq5DcAwDENR7T+sL9lOOoUbkCoCwwKewOJbiGe+31BkwgeDM18YgrPhxuBs4CkS4cQQZMKFwd0R+gzFJaFjcD+EfXgoMuHA4O4Iew/FJWHD4BJhwxDoYcNTIKwY3NGwYggQFgxODEt8xO1/6P+HHxEAAAAASUVORK5CYII=); border-bottom: 1px solid #999999; position: relative;">'
+    inntHtml += '' + title + ''
+    inntHtml += '<div id="popWinClose" style="width: 28px; height: 28px; cursor: pointer; position: absolute; top: -12px; right: -9px; background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABwAAAAcCAYAAAByDd+UAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAJeSURBVEhLvZbPq2lRFMf9B4bSTTIxZiBSMlCI9ycoKX+Bod7w/il3YIL4NyhFmYmBKD2Sp0ix3vqes/e529n74t33Op9astevr3PO2tvxvcLtdquzfbAtyAV8IlYX6d+DG7yxvbP9Fr2fglxR8ybavAYX/GD7Jfr8NahFD9HuMZz4U9Q5jEYjqlarFA6HiVPuDD7EkOMGvTjna9xi8/mcstmsJvKVIRc1Kl+K4haIHItut0t+v9/Y+JGhBrUq6M2xT9iBAXGeGQrY/U+miqI3NNhvw4t3EbNuyXeuzG3ood5eaLDfhhfO6JueWbPZtGKFQkGLNRoN2u/3FI/HtRh6SaDBPkusLnzWpMlkaRC7XC5WfLVaUTqddmKVSoVOp5MVG4/HlEql7mph6vRCC4IfYm2Nt7vAzW63o2KxSLVaja7Xq/DatFotrR49JdCCoHNcmfZZPp+n9XotMmxwVVwnVjbD4ZAikYhWj54SaN1dgjtZWiaToe12K7J0JpOJUUyaykuCsFwuR8fjUWR+slgsKBAIGGukqbwsiGdmElwul5RIJIw10lReEsQ0ns9nkaVzOBys226qhak8HRrsM7ktJLPZjDabjVjZYLBKpZJWrw0NfzzcFvj1KtPp1HpmsVjM2iIq/X5fqzdti4cbHycINjUYDAYUCoWcGA4BHAag1+tRMBi8q4VpGx/wl4dHWzKZpHa7TdFoVIuVy2XqdDrGSTUebYAXnh/e3v49AXZ49wcs4YB3rxgStyjApGG8TfsUPsTUaZQ8FZPgFrB585oo4QLvXoTdcIP/9Krv8/0BDUSOirKWU6wAAAAASUVORK5CYII=);"></div>'
+    inntHtml += '</div>'
+    inntHtml += `<div id="goods_price">当前商品价格，获取价格之后会自动关闭</div>`
+    $("body").append(inntHtml);
+    $("#popWinClose").click(function () {
+        $("#maskTop").hide()
+    });
+    chrome.storage.onChanged.addListener(function (changes, namespace) {
+        for (key in changes) {
+            var storageChange = changes[key];
+            console.log('存储键“%s”（位于“%s”命名空间中）已更改。' +
+                '原来的值为“%s”，新的值为“%s”。',
+                key,
+                namespace,
+                storageChange.oldValue,
+                storageChange.newValue);
+        }
+    });
+}
+
 /**
  * 获取storage的值
  * @returns {Promise<void>}
  */
 async function getData(storage_key, price) {
+    //将获取到的价格显示到提示框里边
+    $('#goods_price').text(`当前商品价格${price}，正在上报价格，上报完毕之后会自动关闭`)
     const result = await getLocalStorageValue(storage_key);
+
     chrome.runtime.sendMessage({
         type: "request",
         url: 'http://api.tiantiandr.cn/admin/v1/disclosure/create_expand',
@@ -75,8 +109,12 @@ async function getData(storage_key, price) {
             "e_value": price
         },
         method: "POST"
+    },
+    function (res) {
+        chrome.runtime.sendMessage({
+            type: "close"
+        });
     });
-    // alert(JSON.stringify(result))
 }
 
 /**
@@ -224,14 +262,14 @@ function isTBSkuClickFinished(element, endSkuIndex) {
  * 获取结算页面价格
  */
 function getPrice() {
-    // let price;
-    // if (location.host.includes('buy.tmall.hk')) {//如果是天猫Hk $('.label__header:contains(合计)').parent().children()[1]
-    //     price = $('.label__header:contains(合计)').parent().children()[1].innerHTML
-    // } else {
-    //     price = $('.label__header').parent().children()[1].innerHTML
-    // }
-    let price = $('.label__header:contains(合计)').parent().children()[1].innerHTML
-    return price
+    if ($('.label__header:contains(合计)') && $('.label__header:contains(合计)').parent() && $('.label__header:contains(合计)').parent().children()[1]) {
+        let price = $('.label__header:contains(合计)').parent().children()[1].innerHTML;
+        $('#goods_price').text(`获取到当前价格为：${price}`);
+        return price
+    } else {
+        $('#goods_price').text(`该商品对当前设备和账号做限制了`);
+        return null
+    }
 }
 
 /**
