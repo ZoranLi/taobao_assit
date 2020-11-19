@@ -27,6 +27,9 @@ document.addEventListener('DOMContentLoaded', function () {
                         alert(parseQuery(document.referrer).id) // 商品ID
                     })
                 }
+            } else if (location.host === "uland.taobao.com") { //粉丝福利购，领券
+                //立即领券
+                $('div:contains(立即领券)').parent().click()
             }
         }, 1000)
     });
