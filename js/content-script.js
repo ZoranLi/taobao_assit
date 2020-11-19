@@ -1,10 +1,12 @@
+
 document.addEventListener('DOMContentLoaded', function () {
     console.log('天天购物插件');
+    setDidKey();
     createHintMessage()
     $(document).ready(function () {
         setTimeout(() => {
             if (location.host.includes('detail.tmall')) {
-
+                setDidKey();
                 dealTM();
             } else if (location.host.includes('buy.tmall')) {
                 //如果有授权的话
@@ -17,7 +19,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 } else {
                     setTimeout(() => {
                         $('#goods_price').text(`该商品对当前设备和账号做限制了`)
-
                     }, 8000)//8s之后还未获取到，就说明账号被限制了
                 }
             }
@@ -34,22 +35,37 @@ document.addEventListener('DOMContentLoaded', function () {
                     }, 8000)//8s之后还未获取到，就说明账号被限制了
                 }
             } else if (location.host === "uland.taobao.com") { //粉丝福利购，领券
+
                 setTimeout(() => {
                     //立即领券
                     $('div:contains(立即领券)').parent().click()
                 }, 1500)
             } else if (location.host === 's.click.taobao.com') {
-                let parseObj = parseQuery(location.href);
-                if (parseObj.did) {
-                    chrome.storage.sync.set({"STORAGE_KEY": parseObj.did}, function () {
-                        console.log('Value is set to ' + parseObj.did);
-                    });
-                }
+
             }
         }, 1000)
     });
 });
 
+
+/**
+ *上报爆料的did
+ */
+function setDidKey() {
+    debugger
+    let parseObj = parseQuery(location.href);
+    let parseReferrerObj = parseQuery(document.referrer);
+    if (parseObj.did) {
+        chrome.storage.local.set({"STORAGE_KEY": parseObj.did}, function () {
+            console.log('Value is set to' + parseObj.did);
+        });
+    }else if(parseReferrerObj.did){
+        chrome.storage.local.set({"STORAGE_KEY": parseReferrerObj.did}, function () {
+            console.log('Value is set to' + parseObj.did);
+        });
+    }
+
+}
 
 /**
  * 创建提示信息
@@ -108,8 +124,13 @@ async function getData(storage_key, price) {
             },
             function (res) {
                 $('#goods_price').text(`上报完毕`)
-                chrome.runtime.sendMessage({
-                    type: "close"
+                var tabId;
+                chrome.extension.sendMessage({type: 'getTabId'}, function (res) {
+                    tabId = res.tabId;
+                    chrome.runtime.sendMessage({
+                        type: "close",
+                        tabId
+                    });
                 });
             });
     }, 3000)
@@ -124,7 +145,7 @@ async function getData(storage_key, price) {
 async function getLocalStorageValue(key) {
     return new Promise((resolve, reject) => {
         try {
-            chrome.storage.sync.get(key, function (value) {
+            chrome.storage.local.get(key, function (value) {
                 resolve(value);
             })
         }
@@ -138,6 +159,7 @@ async function getLocalStorageValue(key) {
  *处理天猫详情
  */
 function dealTM() {
+    debugger
     let endSkuIndex;
     let skuContianer = $('.tb-sku');
 
@@ -281,6 +303,9 @@ function getFinallyPrice() {
  */
 function parseQuery(str) {
     if (typeof str != "string" || str.length == 0) return {};
+    if(str.includes('?')){
+        str = str.split('?')[1]
+    }
     var s = str.split("&");
     var s_length = s.length;
     var bit, query = {}, first, second;

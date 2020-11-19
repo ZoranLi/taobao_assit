@@ -1,14 +1,25 @@
 chrome.runtime.onMessage.addListener(function (message, callback, sendResponse) {
     if (message.type === "close") {
         // alert('即将关闭当前页面');
-        chrome.tabs.getSelected(null, function (tab) {
-            chrome.tabs.remove(tab.id);
-        });
+        // chrome.tabs.getSelected(null, function (tab) {
+        //     chrome.tabs.remove(tab.id);
+        // });
+        chrome.tabs.remove(message.tabId);
     } else if (message.type === "request") {
         let {url, method, body} = message
+        alert(JSON.stringify(body))
         fetchRemoteData(url, method, body, sendResponse)
     }
 });
+
+chrome.extension.onMessage.addListener(
+    function(message, sender, sendResponse) {
+        if ( message.type == 'getTabId' )
+        {
+            sendResponse({ tabId: sender.tab.id });
+        }
+    }
+);
 
 /**
  * 发请求
