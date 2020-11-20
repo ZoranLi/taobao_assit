@@ -74,7 +74,7 @@ function saveText(filename, text) {
 /**
  *上报爆料的did
  */
-function setDidKey() {
+async function setDidKey() {
     let parseObj = parseQuery(location.href);
     let parseReferrerObj = parseQuery(document.referrer);
     let did = parseObj.did;
@@ -87,14 +87,29 @@ function setDidKey() {
         });
     }
 
-    /**
-     * 读取本地文件
-     */
-    $.getJSON(chrome.extension.getURL("goods_list.json"), {}, function (data) {
-        chrome.storage.local.set({"STORAGE_GOOODS_LIST": JSON.stringify(data)}, function () {
-            console.log('Value is set to' + did);
-        });
-    })
+    const gooodsList = await getLocalStorageValue("STORAGE_GOOODS_LIST");
+    if (gooodsList && gooodsList.length) {//如果有数据
+
+
+    } else {
+        chrome.runtime.sendMessage({
+                type: "request",
+                url: 'http://api.tiantiandr.cn/admin/v1/disclosure/query_sync_goods',
+                method: "GET"
+            },
+            function (res) {
+
+            });
+    }
+
+    // /**
+    //  * 读取本地文件
+    //  */
+    // $.getJSON(chrome.extension.getURL("goods_list.json"), {}, function (data) {
+    //     chrome.storage.local.set({"STORAGE_GOOODS_LIST": JSON.stringify(data)}, function () {
+    //         console.log('Value is set to' + did);
+    //     });
+    // })
 }
 
 /**
@@ -281,7 +296,7 @@ function dealTB() {
  */
 function getRandomFactor() {
     let random = Math.round(Math.random() * 8);//模拟用户点击 随机时间
-    return BASIC_TIME +random *400;
+    return BASIC_TIME + random * 400;
 }
 
 

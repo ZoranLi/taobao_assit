@@ -13,9 +13,17 @@ chrome.runtime.onMessage.addListener(function (message, callback, sendResponse) 
             });
             let index = tempIndex === -1 ? 0 : tempIndex;
 
+            if (index === goodsList.length - 1) { // 爬到最后一条清数据
+                chrome.storage.local.set({"STORAGE_GOOODS_LIST": null}, function () {
+                });
+            }
+
             if (index < goodsList.length) {
                 setTimeout(() => {
-                    chrome.tabs.create({url: goodsList[index + 1]});
+                    let url = goodsList[index + 1];
+                    if (url) {
+                        chrome.tabs.create({url: url});
+                    }
                 }, 10000)
             }
         }
@@ -50,7 +58,10 @@ function fetchRemoteData(url, method, body, callback) {
         if (xhr.readyState === 4) {
             var resp = JSON.stringify(xhr.responseText)
             if (resp.result === 'OK') {
-                callback()
+                callback(resp)
+            } else {
+                chrome.storage.local.set({"STORAGE_GOOODS_LIST": JSON.parse(resp)}, function () {
+                });
             }
         }
     };
