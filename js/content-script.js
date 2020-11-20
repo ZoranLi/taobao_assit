@@ -1,12 +1,16 @@
 const USER_NAME = "天天跟我买1"
 const PASSWORD = "Tt22334455"
-const BASIC_TIME = 1000
+const BASIC_TIME = 1200
 document.addEventListener('DOMContentLoaded', function () {
     console.log('天天购物插件');
     createHintMessage()
     $(document).ready(function () {
         setDidKey();
         setTimeout(() => {
+            if (location.host.includes('www.baidu.com')) {
+                let result = queryErrorDids()
+                alert(JSON.stringify(result))
+            }
             if (location.host.includes('login.taobao.com')) {
                 //登录
                 $("#fm-login-id").val(USER_NAME)
@@ -26,7 +30,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
                 let price = getFinallyPrice();
                 if (price) {
-                    getData("STORAGE_KEY", price)
+                    getData("STORAGE_DID", price)
                 } else {
                     setTimeout(() => {
                         $('#goods_price').text(`该商品对当前设备和账号做限制了`)
@@ -38,7 +42,7 @@ document.addEventListener('DOMContentLoaded', function () {
             } else if (location.host === 'buy.taobao.com') {
                 let price = getFinallyPrice();
                 if (price) {
-                    getData("STORAGE_KEY", price)
+                    getData("STORAGE_DID", price)
                 } else {
                     setTimeout(() => {
                         $('#goods_price').text(`该商品对当前设备和账号做限制了`)
@@ -82,14 +86,13 @@ async function setDidKey() {
         did = parseReferrerObj.did
     }
     if (did) {
-        chrome.storage.local.set({"STORAGE_KEY": did}, function () {
+        chrome.storage.local.set({"STORAGE_DID": did}, function () {
             console.log('Value is set to' + did);
         });
     }
 
     const gooodsList = await getLocalStorageValue("STORAGE_GOOODS_LIST");
     if (gooodsList && gooodsList.length) {//如果有数据
-
 
     } else {
         chrome.runtime.sendMessage({
@@ -160,7 +163,7 @@ async function getData(storage_key, price) {
                 type: "request",
                 url: 'http://api.tiantiandr.cn/admin/v1/disclosure/create_expand',
                 body: {
-                    "did": result["STORAGE_KEY"],
+                    "did": result["STORAGE_DID"],
                     "e_type": 0,
                     "e_name": "capture_price",
                     "e_value": price
@@ -174,7 +177,7 @@ async function getData(storage_key, price) {
                     tabId = res.tabId;
                     chrome.runtime.sendMessage({
                         type: "close",
-                        did: result["STORAGE_KEY"],
+                        did: result["STORAGE_DID"],
                         tabId,
                         gooodsList
                     });
@@ -221,9 +224,58 @@ function dealTM() {
     isTMSkuClickFinished(skuContianer, endSkuIndex)
     setTimeout(() => {
         //去购买之前再检查一遍 规格有没有漏掉的
-        $('[data-addfastbuy]')[0].click();
+        if ($('[data-addfastbuy]')[0].classList.value === "noPost") {//当前地区不支持配送
+            dealErrorDID()
+        } else {
+            $('[data-addfastbuy]')[0].click();
+        }
+
     }, 2000)
 }
+
+/**
+ * 上报 出错的did
+ * @returns {Promise<void>}
+ */
+async function dealErrorDID() {
+    const result = await getLocalStorageValue("STORAGE_DID");
+    alert(result["STORAGE_DID"]);
+    saveErrorDid(result["STORAGE_DID"])
+    //TODO 上报error的爆料
+    const gooodsList = await getLocalStorageValue("STORAGE_GOOODS_LIST");
+    chrome.extension.sendMessage({type: 'getTabId'}, function (res) {//关闭当前页面 抓取下一个
+        tabId = res.tabId;
+        chrome.runtime.sendMessage({
+            type: "close",
+            did: result["STORAGE_DID"],
+            tabId,
+            gooodsList
+        });
+    });
+}
+
+/**
+ * 本地保存失败的did
+ * @param did
+ * @returns {Promise<void>}
+ */
+async function saveErrorDid(did) {
+    let errorDids = await getLocalStorageValue("STORAGE_ERROR_DIDS")["STORAGE_ERROR_DIDS"];
+    if (!errorDids) {
+        errorDids = []
+    }
+    errorDids.push(did)
+    chrome.storage.local.set({"STORAGE_ERROR_DIDS": errorDids}, function () { });
+}
+
+/**
+ * 查询本地保存的错误did
+ * @returns {Promise<any|Array>}
+ */
+async function queryErrorDids() {
+    return await getLocalStorageValue("STORAGE_ERROR_DIDS") || [];
+}
+
 
 /**
  * 天猫sku是否都选完了
@@ -238,6 +290,16 @@ function isTMSkuClickFinished(element, endSkuIndex) {
 
             } else if (liElem && liElem[0]) {
                 liElem[0].getElementsByTagName('a')[0].click()
+
+                if($(".ensureText")[0]){
+                    let demo = window.getComputedStyle($(".ensureText")[0], null);
+                    if(demo.display !== 'none'){
+                        setTimeout(() => {
+                            $('[data-addfastbuy]')[0].click();
+                        },getRandomFactor())
+                    }
+                }
+
                 setTimeout(() => {
                     isTMSkuClickFinished(element, endSkuIndex)
                 }, getRandomFactor())

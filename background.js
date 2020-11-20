@@ -58,6 +58,7 @@ function fetchRemoteData(url, method, body, callback) {
         if (xhr.readyState === 4) {
             var resp = JSON.stringify(xhr.responseText)
             if (resp.result === 'OK') {
+                deleteList(body.did);
                 callback(resp)
             } else {
                 chrome.storage.local.set({"STORAGE_GOOODS_LIST": JSON.parse(resp)}, function () {
@@ -66,4 +67,34 @@ function fetchRemoteData(url, method, body, callback) {
         }
     };
     xhr.send(JSON.stringify(body));
+}
+
+
+async function deleteList(did){
+    const gooodsList = await getLocalStorageValue("STORAGE_GOOODS_LIST");
+    //上报完成就删掉本地list
+    let tempIndex = goodsList.findIndex((e) => {
+        return e.includes(did)
+    });
+    gooodsList.splice(tempIndex, 1);
+    chrome.storage.local.set({"STORAGE_GOOODS_LIST": gooodsList}, function () {
+    });
+}
+
+/**
+ * 获取storage的值
+ * @param key
+ * @returns {Promise<any>}
+ */
+async function getLocalStorageValue(key) {
+    return new Promise((resolve, reject) => {
+        try {
+            chrome.storage.local.get(key, function (value) {
+                resolve(value);
+            })
+        }
+        catch (ex) {
+            reject(ex);
+        }
+    });
 }
