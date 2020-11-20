@@ -1,6 +1,6 @@
 const USER_NAME = "天天跟我买1"
 const PASSWORD = "Tt22334455"
-const BASIC_TIME = 1200
+const BASIC_TIME = 2200
 document.addEventListener('DOMContentLoaded', function () {
     console.log('天天购物插件');
     createHintMessage()
