@@ -77,7 +77,7 @@ function setDidKey() {
     let parseObj = parseQuery(location.href);
     let parseReferrerObj = parseQuery(document.referrer);
     let did = parseObj.did;
-    if (did) {
+    if (!did) {
         did = parseReferrerObj.did
     }
     if (did) {
