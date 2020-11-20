@@ -5,18 +5,31 @@ chrome.runtime.onMessage.addListener(function (message, callback, sendResponse) 
         //     chrome.tabs.remove(tab.id);
         // });
         chrome.tabs.remove(message.tabId);
-    } else if (message.type === "request") {
-        let {url, method, body} = message
-        alert(JSON.stringify(body))
-        fetchRemoteData(url, method, body, sendResponse)
+
+        let goodsList = JSON.parse(message.gooodsList["STORAGE_GOOODS_LIST"]);
+        if (goodsList) {
+            let tempIndex = goodsList.findIndex((e) => {
+                return e.includes(message.did)
+            });
+            let index = tempIndex === -1 ? 0 : tempIndex;
+
+            if (index < goodsList.length) {
+                setTimeout(() => {
+                    chrome.tabs.create({url: goodsList[index + 1]});
+                }, 10000)
+            }
+        }
     }
 });
 
 chrome.extension.onMessage.addListener(
-    function(message, sender, sendResponse) {
-        if ( message.type == 'getTabId' )
-        {
-            sendResponse({ tabId: sender.tab.id });
+    function (message, sender, sendResponse) {
+        if (message.type === 'getTabId') {
+            sendResponse({tabId: sender.tab.id});
+        } else if (message.type === "request") {
+            let {url, method, body} = message
+            // alert(JSON.stringify(body))
+            fetchRemoteData(url, method, body, sendResponse)
         }
     }
 );

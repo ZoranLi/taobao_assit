@@ -1,10 +1,21 @@
+const USER_NAME = "天天跟我买1"
+const PASSWORD = "Tt22334455"
 document.addEventListener('DOMContentLoaded', function () {
     console.log('天天购物插件');
-    setDidKey();
     createHintMessage()
     $(document).ready(function () {
+        setDidKey();
         setTimeout(() => {
-            if (location.host.includes('detail.tmall')) {
+            if (location.host.includes('login.taobao.com')) {
+                //登录
+                $("#fm-login-id").val(USER_NAME)
+                $("#fm-login-password").val(PASSWORD)
+
+                setTimeout(() => {
+                    $("[class='fm-button fm-submit password-login']").click()
+                }, 500)
+
+            } else if (location.host.includes('detail.tmall')) {
                 setDidKey();
                 dealTM();
             } else if (location.host.includes('buy.tmall')) {
@@ -48,21 +59,41 @@ document.addEventListener('DOMContentLoaded', function () {
 
 
 /**
+ * 保存文件
+ * @param filename
+ * @param text
+ */
+function saveText(filename, text) {
+    var tempElem = document.createElement('a');
+    tempElem.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
+    tempElem.setAttribute('download', filename);
+    tempElem.click();
+}
+
+/**
  *上报爆料的did
  */
 function setDidKey() {
     let parseObj = parseQuery(location.href);
     let parseReferrerObj = parseQuery(document.referrer);
-    if (parseObj.did) {
-        chrome.storage.local.set({"STORAGE_KEY": parseObj.did}, function () {
-            console.log('Value is set to' + parseObj.did);
-        });
-    }else if(parseReferrerObj.did){
-        chrome.storage.local.set({"STORAGE_KEY": parseReferrerObj.did}, function () {
-            console.log('Value is set to' + parseObj.did);
+    let did = parseObj.did;
+    if (did) {
+        did = parseReferrerObj.did
+    }
+    if (did) {
+        chrome.storage.local.set({"STORAGE_KEY": did}, function () {
+            console.log('Value is set to' + did);
         });
     }
 
+    /**
+     * 读取本地文件
+     */
+    $.getJSON(chrome.extension.getURL("goods_list.json"), {}, function (data) {
+        chrome.storage.local.set({"STORAGE_GOOODS_LIST": JSON.stringify(data)}, function () {
+            console.log('Value is set to' + did);
+        });
+    })
 }
 
 /**
@@ -107,7 +138,7 @@ async function getData(storage_key, price) {
     //将获取到的价格显示到提示框里边
     $('#goods_price').html(`当前商品价格<font style="font-size: 32px;color: RED;">${price}</font>，<br>正在上报价格，上报完毕之后会自动关闭`)
     const result = await getLocalStorageValue(storage_key);
-
+    const gooodsList = await getLocalStorageValue("STORAGE_GOOODS_LIST");
     setTimeout(() => {
         chrome.runtime.sendMessage({
                 type: "request",
@@ -127,7 +158,9 @@ async function getData(storage_key, price) {
                     tabId = res.tabId;
                     chrome.runtime.sendMessage({
                         type: "close",
-                        tabId
+                        did:result["STORAGE_KEY"],
+                        tabId,
+                        gooodsList
                     });
                 });
             });
@@ -300,7 +333,7 @@ function getFinallyPrice() {
  */
 function parseQuery(str) {
     if (typeof str != "string" || str.length == 0) return {};
-    if(str.includes('?')){
+    if (str.includes('?')) {
         str = str.split('?')[1]
     }
     var s = str.split("&");
