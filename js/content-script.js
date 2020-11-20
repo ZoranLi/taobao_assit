@@ -1,4 +1,3 @@
-
 document.addEventListener('DOMContentLoaded', function () {
     console.log('天天购物插件');
     setDidKey();
@@ -52,7 +51,6 @@ document.addEventListener('DOMContentLoaded', function () {
  *上报爆料的did
  */
 function setDidKey() {
-    debugger
     let parseObj = parseQuery(location.href);
     let parseReferrerObj = parseQuery(document.referrer);
     if (parseObj.did) {
@@ -159,7 +157,6 @@ async function getLocalStorageValue(key) {
  *处理天猫详情
  */
 function dealTM() {
-    debugger
     let endSkuIndex;
     let skuContianer = $('.tb-sku');
 
