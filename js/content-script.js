@@ -1,5 +1,6 @@
 const USER_NAME = "天天跟我买1"
 const PASSWORD = "Tt22334455"
+const BASIC_TIME = 1000
 document.addEventListener('DOMContentLoaded', function () {
     console.log('天天购物插件');
     createHintMessage()
@@ -13,7 +14,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
                 setTimeout(() => {
                     $("[class='fm-button fm-submit password-login']").click()
-                }, 500)
+                }, getRandomFactor())
 
             } else if (location.host.includes('detail.tmall')) {
                 setDidKey();
@@ -49,7 +50,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 setTimeout(() => {
                     //立即领券
                     $('div:contains(立即领券)').parent().click()
-                }, 1500)
+                }, getRandomFactor())
             } else if (location.host === 's.click.taobao.com') {
 
             }
@@ -158,7 +159,7 @@ async function getData(storage_key, price) {
                     tabId = res.tabId;
                     chrome.runtime.sendMessage({
                         type: "close",
-                        did:result["STORAGE_KEY"],
+                        did: result["STORAGE_KEY"],
                         tabId,
                         gooodsList
                     });
@@ -222,10 +223,9 @@ function isTMSkuClickFinished(element, endSkuIndex) {
 
             } else if (liElem && liElem[0]) {
                 liElem[0].getElementsByTagName('a')[0].click()
-                let random = Math.round(Math.random() * 8);//模拟用户点击 随机时间
                 setTimeout(() => {
                     isTMSkuClickFinished(element, endSkuIndex)
-                }, 200 + 200 * random)
+                }, getRandomFactor())
             }
         }
     });
@@ -273,7 +273,15 @@ function dealTB() {
 
     setTimeout(() => {
         $('[data-addfastbuy]')[0].click();
-    }, 1000)
+    }, getRandomFactor())
+}
+
+/**
+ * 获取随机因子
+ */
+function getRandomFactor() {
+    let random = Math.round(Math.random() * 8);//模拟用户点击 随机时间
+    return BASIC_TIME +random *400;
 }
 
 
@@ -289,7 +297,7 @@ function isTBSkuClickFinished(element, endSkuIndex) {
             if (liElem && liElem[0] && liElem[0].classList.value.includes('tb-selected')) {
 
             } else if (liElem && liElem[0]) {
-                let random = Math.round(Math.random() * 8);//模拟用户点击 随机时间
+
 
                 liElem[0].getElementsByTagName('a')[0].click()
 
@@ -297,12 +305,12 @@ function isTBSkuClickFinished(element, endSkuIndex) {
                 if (demo.display !== 'none') {
                     setTimeout(() => {
                         $(".tb-sure-continue").getElementsByTagName('a')[0].click()
-                    }, 200 + random * 200)
+                    }, getRandomFactor())
                 }
 
                 setTimeout(() => {
                     isTBSkuClickFinished(element, endSkuIndex)
-                }, 200 + random * 200)
+                }, getRandomFactor())
             }
         }
     });
@@ -359,6 +367,6 @@ async function closeAuthWindow() {
         await setTimeout(() => {
             // $('.auth-btm').contents('授权').click()
             $('.auth-btm').children()[1].click()
-        }, 800)
+        }, getRandomFactor())
     }
 }
