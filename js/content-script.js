@@ -1,5 +1,3 @@
-const USER_NAME = "天天跟我买1";
-const PASSWORD = "Tt22334455";
 const BASIC_TIME = 1200; //点击默认基础时间
 const BASIC_FACTOR = 50;//点击默认随机时间
 document.addEventListener('DOMContentLoaded', function () {
