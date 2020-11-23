@@ -87,8 +87,12 @@ async function setDidKey() {
     let parseObj = parseQuery(location.href);
     let parseReferrerObj = parseQuery(document.referrer);
     let did = parseObj.did;
+    let did_array = parseObj.did_array;
     if (!did) {
         did = parseReferrerObj.did
+    }
+    if (!did_array) {
+        did_array = parseReferrerObj.did_array
     }
     if (did) {
         chrome.storage.local.set({"STORAGE_DID": did}, function () {
@@ -96,28 +100,32 @@ async function setDidKey() {
         });
     }
 
-    // const gooodsList = await getLocalStorageValue("STORAGE_GOOODS_LIST");
-    // if (gooodsList && gooodsList.length) {//如果有数据
-    //
-    // } else {
-    //     chrome.runtime.sendMessage({
-    //             type: "request",
-    //             url: 'http://api.tiantiandr.cn/admin/v1/disclosure/query_sync_goods',
-    //             method: "GET"
-    //         },
-    //         function (res) {
-    //
-    //         });
-    // }
+    if (!did_array) { //如果没有did_array 就清除本地数据
+        chrome.storage.local.set({"STORAGE_GOOODS_LIST": null}, function () {
+        });
+    } else {
+        const gooodsList = await getLocalStorageValue("STORAGE_GOOODS_LIST");
+        if (!(gooodsList && gooodsList.length)) {//如果没有数据
+            chrome.runtime.sendMessage({
+                    type: "request",
+                    url: `http://api.tiantiandr.cn/admin/v1/disclosure/query_sync_goods?did_array=${did_array}`,
+                    method: "GET"
+                },
+                function (res) {
+
+                });
+        }
+    }
+
 
     // /**
     //  * 读取本地文件
     //  */
-    $.getJSON(chrome.extension.getURL("goods_list.json"), {}, function (data) {
-        chrome.storage.local.set({"STORAGE_GOOODS_LIST": JSON.stringify(data)}, function () {
-            console.log('Value is set to' + did);
-        });
-    })
+    // $.getJSON(chrome.extension.getURL("goods_list.json"), {}, function (data) {
+    //     chrome.storage.local.set({"STORAGE_GOOODS_LIST": JSON.stringify(data)}, function () {
+    //         console.log('Value is set to' + did);
+    //     });
+    // })
 }
 
 /**
@@ -136,7 +144,7 @@ function createHintMessage() {
     inntHtml += '' + title + ''
     inntHtml += '<div id="popWinClose" style="width: 28px; height: 28px; cursor: pointer; position: absolute; top: -12px; right: -9px; background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABwAAAAcCAYAAAByDd+UAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAJeSURBVEhLvZbPq2lRFMf9B4bSTTIxZiBSMlCI9ycoKX+Bod7w/il3YIL4NyhFmYmBKD2Sp0ix3vqes/e529n74t33Op9astevr3PO2tvxvcLtdquzfbAtyAV8IlYX6d+DG7yxvbP9Fr2fglxR8ybavAYX/GD7Jfr8NahFD9HuMZz4U9Q5jEYjqlarFA6HiVPuDD7EkOMGvTjna9xi8/mcstmsJvKVIRc1Kl+K4haIHItut0t+v9/Y+JGhBrUq6M2xT9iBAXGeGQrY/U+miqI3NNhvw4t3EbNuyXeuzG3ood5eaLDfhhfO6JueWbPZtGKFQkGLNRoN2u/3FI/HtRh6SaDBPkusLnzWpMlkaRC7XC5WfLVaUTqddmKVSoVOp5MVG4/HlEql7mph6vRCC4IfYm2Nt7vAzW63o2KxSLVaja7Xq/DatFotrR49JdCCoHNcmfZZPp+n9XotMmxwVVwnVjbD4ZAikYhWj54SaN1dgjtZWiaToe12K7J0JpOJUUyaykuCsFwuR8fjUWR+slgsKBAIGGukqbwsiGdmElwul5RIJIw10lReEsQ0ns9nkaVzOBys226qhak8HRrsM7ktJLPZjDabjVjZYLBKpZJWrw0NfzzcFvj1KtPp1HpmsVjM2iIq/X5fqzdti4cbHycINjUYDAYUCoWcGA4BHAag1+tRMBi8q4VpGx/wl4dHWzKZpHa7TdFoVIuVy2XqdDrGSTUebYAXnh/e3v49AXZ49wcs4YB3rxgStyjApGG8TfsUPsTUaZQ8FZPgFrB585oo4QLvXoTdcIP/9Krv8/0BDUSOirKWU6wAAAAASUVORK5CYII=);"></div>'
     inntHtml += '</div>'
-    inntHtml += `<div id="goods_price">正在获取商品价格，获取价格，上报完毕会自动关闭页面</div>`
+    inntHtml += `<div id="goods_price">正在获取商品价格，获取到价格，上报完毕会自动关闭页面</div>`
     $("body").append(inntHtml);
     $("#popWinClose").click(function () {
         $("#maskTop").hide()
