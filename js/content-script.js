@@ -14,12 +14,12 @@ document.addEventListener('DOMContentLoaded', function () {
             }
             if (location.host.includes('login.taobao.com')) {
                 //登录
-                $("#fm-login-id").val(USER_NAME)
-                $("#fm-login-password").val(PASSWORD)
+                // $("#fm-login-id").val(USER_NAME)
+                // $("#fm-login-password").val(PASSWORD)
 
-                setTimeout(() => {
-                    $("[class='fm-button fm-submit password-login']").click()
-                }, getRandomFactor())
+                // setTimeout(() => {
+                //     $("[class='fm-button fm-submit password-login']").click()
+                // }, getRandomFactor())
 
             } else if (location.host.includes('detail.tmall')) {
                 setDidKey();
