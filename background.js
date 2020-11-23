@@ -24,7 +24,7 @@ chrome.runtime.onMessage.addListener(function (message, callback, sendResponse) 
                     if (url) {
                         chrome.tabs.create({url: url});
                     }
-                }, 10000)
+                }, 1500)
             }
         }
     }

@@ -1,6 +1,7 @@
-const USER_NAME = "天天跟我买1"
-const PASSWORD = "Tt22334455"
-const BASIC_TIME = 2200
+const USER_NAME = "天天跟我买1";
+const PASSWORD = "Tt22334455";
+const BASIC_TIME = 1200; //点击默认基础时间
+const BASIC_FACTOR = 50;//点击默认随机时间
 document.addEventListener('DOMContentLoaded', function () {
     console.log('天天购物插件');
     createHintMessage()
@@ -22,6 +23,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
             } else if (location.host.includes('detail.tmall')) {
                 setDidKey();
+                //如果被限制
                 dealTM();
             } else if (location.host.includes('buy.tmall')) {
                 //如果有授权的话
@@ -34,7 +36,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 } else {
                     setTimeout(() => {
                         $('#goods_price').text(`该商品对当前设备和账号做限制了`)
-                    }, 8000)//8s之后还未获取到，就说明账号被限制了
+                    }, 3000)//8s之后还未获取到，就说明账号被限制了
                 }
             }
             else if (location.host === 'item.taobao.com') {
@@ -47,14 +49,19 @@ document.addEventListener('DOMContentLoaded', function () {
                     setTimeout(() => {
                         $('#goods_price').text(`该商品对当前设备和账号做限制了`)
 
-                    }, 8000)//8s之后还未获取到，就说明账号被限制了
+                    }, 3000)//8s之后还未获取到，就说明账号被限制了
                 }
             } else if (location.host === "uland.taobao.com") { //粉丝福利购，领券
-
-                setTimeout(() => {
-                    //立即领券
-                    $('div:contains(立即领券)').parent().click()
-                }, getRandomFactor())
+                if ($('div:contains(立即领券)').css('display')) {
+                    setTimeout(() => {
+                        //立即领券
+                        $('div:contains(立即领券)').parent().click()
+                    }, getRandomFactor(1000))
+                } else if ($('.err-tip')[0] && $('.err-tip')[0].innerHTML === '宝贝不见了') {//宝贝不见了
+                    dealErrorDID();
+                } else {
+                    $('.item-img-con').click()
+                }
             } else if (location.host === 's.click.taobao.com') {
 
             }
@@ -91,28 +98,28 @@ async function setDidKey() {
         });
     }
 
-    const gooodsList = await getLocalStorageValue("STORAGE_GOOODS_LIST");
-    if (gooodsList && gooodsList.length) {//如果有数据
-
-    } else {
-        chrome.runtime.sendMessage({
-                type: "request",
-                url: 'http://api.tiantiandr.cn/admin/v1/disclosure/query_sync_goods',
-                method: "GET"
-            },
-            function (res) {
-
-            });
-    }
+    // const gooodsList = await getLocalStorageValue("STORAGE_GOOODS_LIST");
+    // if (gooodsList && gooodsList.length) {//如果有数据
+    //
+    // } else {
+    //     chrome.runtime.sendMessage({
+    //             type: "request",
+    //             url: 'http://api.tiantiandr.cn/admin/v1/disclosure/query_sync_goods',
+    //             method: "GET"
+    //         },
+    //         function (res) {
+    //
+    //         });
+    // }
 
     // /**
     //  * 读取本地文件
     //  */
-    // $.getJSON(chrome.extension.getURL("goods_list.json"), {}, function (data) {
-    //     chrome.storage.local.set({"STORAGE_GOOODS_LIST": JSON.stringify(data)}, function () {
-    //         console.log('Value is set to' + did);
-    //     });
-    // })
+    $.getJSON(chrome.extension.getURL("goods_list.json"), {}, function (data) {
+        chrome.storage.local.set({"STORAGE_GOOODS_LIST": JSON.stringify(data)}, function () {
+            console.log('Value is set to' + did);
+        });
+    })
 }
 
 /**
@@ -183,7 +190,7 @@ async function getData(storage_key, price) {
                     });
                 });
             });
-    }, 3000)
+    }, 200)
 
 }
 
@@ -222,15 +229,30 @@ function dealTM() {
     });
 
     isTMSkuClickFinished(skuContianer, endSkuIndex)
-    setTimeout(() => {
-        //去购买之前再检查一遍 规格有没有漏掉的
-        if ($('[data-addfastbuy]')[0].classList.value === "noPost") {//当前地区不支持配送
-            dealErrorDID()
-        } else {
-            $('[data-addfastbuy]')[0].click();
-        }
 
-    }, 2000)
+    //去购买之前再检查一遍 规格有没有漏掉的
+    if ($('[data-addfastbuy]')[0].classList.value === "noPost") {//当前地区不支持配送
+        dealErrorDID()
+    } else {
+        setTimeout(() => {
+            $('[data-addfastbuy]')[0].click();
+            // TODO 检查天猫未登录状态 并登录
+            /*
+             setInterval(()=>{
+                 if($("[class='fm-button fm-submit password-login']")){
+                     // $("#fm-login-id").val(USER_NAME)
+                     document.getElementById("fm-login-id").value= USER_NAME
+                     document.getElementById("fm-login-password").value= PASSWORD
+                     // $("#fm-login-password").val(PASSWORD)
+                     setTimeout(() => {
+                         $("[class='fm-button fm-submit password-login']").click()
+                     }, getRandomFactor())
+                 }
+             },500)*/
+        }, getRandomFactor())
+    }
+
+
 }
 
 /**
@@ -239,7 +261,6 @@ function dealTM() {
  */
 async function dealErrorDID() {
     const result = await getLocalStorageValue("STORAGE_DID");
-    alert(result["STORAGE_DID"]);
     saveErrorDid(result["STORAGE_DID"])
     //TODO 上报error的爆料
     const gooodsList = await getLocalStorageValue("STORAGE_GOOODS_LIST");
@@ -265,7 +286,8 @@ async function saveErrorDid(did) {
         errorDids = []
     }
     errorDids.push(did)
-    chrome.storage.local.set({"STORAGE_ERROR_DIDS": errorDids}, function () { });
+    chrome.storage.local.set({"STORAGE_ERROR_DIDS": errorDids}, function () {
+    });
 }
 
 /**
@@ -291,12 +313,12 @@ function isTMSkuClickFinished(element, endSkuIndex) {
             } else if (liElem && liElem[0]) {
                 liElem[0].getElementsByTagName('a')[0].click()
 
-                if($(".ensureText")[0]){
+                if ($(".ensureText")[0]) {
                     let demo = window.getComputedStyle($(".ensureText")[0], null);
-                    if(demo.display !== 'none'){
+                    if (demo.display !== 'none') {
                         setTimeout(() => {
                             $('[data-addfastbuy]')[0].click();
-                        },getRandomFactor())
+                        }, getRandomFactor())
                     }
                 }
 
@@ -354,11 +376,14 @@ function dealTB() {
 }
 
 /**
- * 获取随机因子
+ * 模拟随机点击事件
+ * @param time
+ * @param factor 随机因子 默认400ms
+ * @returns {number}
  */
-function getRandomFactor() {
+function getRandomFactor(time = BASIC_TIME, factor = BASIC_FACTOR) {
     let random = Math.round(Math.random() * 8);//模拟用户点击 随机时间
-    return BASIC_TIME + random * 400;
+    return time + random * factor;
 }
 
 
@@ -400,14 +425,14 @@ function getFinallyPrice() {
         if (!price || price === '0.00') {
             setTimeout(() => {
                 getFinallyPrice()//500毫秒之后再次获取
-            }, 500)
+            }, 200)
         } else {
             return price
         }
     } else {
         setTimeout(() => {
             getFinallyPrice()//500毫秒之后再次获取
-        }, 500)
+        }, 200)
     }
 }
 
