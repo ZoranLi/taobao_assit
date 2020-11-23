@@ -1,4 +1,4 @@
-const BASIC_TIME = 1200; //点击默认基础操作时间
+const BASIC_TIME = 2200; //点击默认基础操作时间
 const BASIC_FACTOR = 50;//点击默认随机因子
 document.addEventListener('DOMContentLoaded', function () {
     console.log('天天购物插件');
@@ -54,7 +54,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     setTimeout(() => {
                         //立即领券
                         $('div:contains(立即领券)').parent().click()
-                    }, getRandomFactor(1000))
+                    }, getRandomFactor(2000))
                 } else if ($('.err-tip')[0] && $('.err-tip')[0].innerHTML === '宝贝不见了') {//宝贝不见了
                     dealErrorDID();
                 } else {

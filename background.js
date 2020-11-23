@@ -22,7 +22,7 @@ chrome.runtime.onMessage.addListener(function (message, callback, sendResponse) 
                 setTimeout(() => {
                     let url = goodsList[index + 1];
                     if (url) {
-                        chrome.tabs.create({url: url});
+                        chrome.tabs.create({url: url,active: false});
                     }
                 }, 1500)
             }
