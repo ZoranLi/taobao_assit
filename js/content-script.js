@@ -2,13 +2,12 @@ const BASIC_TIME = 1200; //点击默认基础操作时间
 const BASIC_FACTOR = 400;//点击默认随机因子
 document.addEventListener('DOMContentLoaded', function () {
     console.log('天天购物插件');
-    createHintMessage()
     $(document).ready(function () {
         setDidKey();
         setTimeout(() => {
             if (location.host.includes('www.baidu.com')) {
-                let result = queryErrorDids()
-                alert(JSON.stringify(result))
+                // let result = queryErrorDids()
+                // alert(JSON.stringify(result))
             }
             if (location.host.includes('login.taobao.com')) {
                 //登录
@@ -20,6 +19,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 // }, getRandomFactor())
 
             } else if (location.host.includes('detail.tmall')) {
+                createHintMessage()
                 setDidKey();
                 //如果被限制
                 if ($('.sold-out-tit:contains(此商品已下架)')) {
@@ -30,6 +30,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     dealTM();
                 }
             } else if (location.host.includes('buy.tmall')) {
+                createHintMessage()
                 //如果有授权的话
                 // auth-btm
                 closeAuthWindow();
@@ -44,8 +45,10 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
             }
             else if (location.host === 'item.taobao.com') {
+                createHintMessage()
                 dealTB();
             } else if (location.host === 'buy.taobao.com') {
+                createHintMessage()
                 let price = getFinallyPrice();
                 if (price) {
                     getData("STORAGE_DID", price)
@@ -56,6 +59,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     }, 3000)//8s之后还未获取到，就说明账号被限制了
                 }
             } else if (location.host === "uland.taobao.com") { //粉丝福利购，领券
+                createHintMessage()
                 setTimeout(() => {
                     if ($('div:contains(立即领券)').css('display')) {
                         setTimeout(() => {
