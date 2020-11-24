@@ -1,4 +1,4 @@
-const BASIC_TIME = 1200; //点击默认基础操作时间
+const BASIC_TIME = 1500; //点击默认基础操作时间
 const BASIC_FACTOR = 400;//点击默认随机因子
 document.addEventListener('DOMContentLoaded', function () {
     console.log('天天购物插件');
