@@ -1,6 +1,5 @@
 chrome.runtime.onMessage.addListener(function (message, callback, sendResponse) {
     if (message.type === "close") {
-        // alert('即将关闭当前页面');
         // chrome.tabs.getSelected(null, function (tab) {
         //     chrome.tabs.remove(tab.id);
         // });
@@ -8,21 +7,27 @@ chrome.runtime.onMessage.addListener(function (message, callback, sendResponse) 
 
         let goodsList = JSON.parse(message.gooodsList["STORAGE_GOOODS_LIST"]);
         if (goodsList) {
-            let tempIndex = goodsList.findIndex((e) => {
-                return e.includes(message.did)
+            // let index = goodsList.findIndex((e) => parseQuery(e).did === message.did);
+            let index = null;
+            goodsList.map((ele, anchor) => {
+                if (parseQuery(ele).did === message.did) {
+                    index = anchor
+                }
             });
-            let index = tempIndex === -1 ? 0 : tempIndex;
 
-            if (index === goodsList.length - 1) { // 爬到最后一条清数据
+            if (index === goodsList.length - 1 || index === null) { // 爬到最后一条清数据 //如果没找到
                 chrome.storage.local.set({"STORAGE_GOOODS_LIST": null}, function () {
                 });
+            } else {
+                deleteElement(message.did)
             }
 
             if (index < goodsList.length) {
+
                 setTimeout(() => {
                     let url = goodsList[index + 1];
                     if (url) {
-                        chrome.tabs.create({url: url,active: false});
+                        chrome.tabs.create({url: url, active: false});
                     }
                 }, 1500)
             }
@@ -36,7 +41,6 @@ chrome.extension.onMessage.addListener(
             sendResponse({tabId: sender.tab.id});
         } else if (message.type === "request") {
             let {url, method, body} = message
-            // alert(JSON.stringify(body))
             fetchRemoteData(url, method, body, sendResponse)
         }
     }
@@ -58,7 +62,7 @@ function fetchRemoteData(url, method, body, callback) {
         if (xhr.readyState === 4) {
             var resp = JSON.stringify(xhr.responseText)
             if (resp.result === 'OK') {
-                deleteList(body.did);
+                deleteElement(body.did);
                 callback(resp)
             } else {
                 chrome.storage.local.set({"STORAGE_GOOODS_LIST": JSON.parse(resp)}, function () {
@@ -70,15 +74,20 @@ function fetchRemoteData(url, method, body, callback) {
 }
 
 
-async function deleteList(did){
-    const gooodsList = await getLocalStorageValue("STORAGE_GOOODS_LIST");
+async function deleteElement(did) {
+    let goodsList = await getLocalStorageValue("STORAGE_GOOODS_LIST");
+    goodsList = JSON.parse(goodsList['STORAGE_GOOODS_LIST'])
+
     //上报完成就删掉本地list
     let tempIndex = goodsList.findIndex((e) => {
         return e.includes(did)
     });
-    gooodsList.splice(tempIndex, 1);
-    chrome.storage.local.set({"STORAGE_GOOODS_LIST": gooodsList}, function () {
-    });
+    if (tempIndex !== -1) {
+        goodsList.splice(tempIndex, 1);
+        chrome.storage.local.set({"STORAGE_GOOODS_LIST": goodsList}, function () {
+        });
+
+    }
 }
 
 /**
@@ -98,3 +107,29 @@ async function getLocalStorageValue(key) {
         }
     });
 }
+
+/**
+ * 格式化queryparams 获取 refer中的ID
+ * @param str
+ * @returns {{}}
+ */
+function parseQuery(str) {
+    if (typeof str != "string" || str.length == 0) return {};
+    if (str.includes('?')) {
+        str = str.split('?')[1]
+    }
+    var s = str.split("&");
+    var s_length = s.length;
+    var bit, query = {}, first, second;
+    for (var i = 0; i < s_length; i++) {
+        bit = s[i].split("=");
+        first = decodeURIComponent(bit[0]);
+        if (first.length == 0) continue;
+        second = decodeURIComponent(bit[1]);
+        if (typeof query[first] == "undefined") query[first] = second;
+        else if (query[first] instanceof Array) query[first].push(second);
+        else query[first] = [query[first], second];
+    }
+    return query;
+}
+
