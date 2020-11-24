@@ -7,8 +7,8 @@ document.addEventListener('DOMContentLoaded', function () {
         setDidKey();
         setTimeout(() => {
             if (location.host.includes('www.baidu.com')) {
-                // let result = queryErrorDids()
-                // alert(JSON.stringify(result))
+                let result = queryErrorDids()
+                alert(JSON.stringify(result))
             }
             if (location.host.includes('login.taobao.com')) {
                 //登录
@@ -22,7 +22,13 @@ document.addEventListener('DOMContentLoaded', function () {
             } else if (location.host.includes('detail.tmall')) {
                 setDidKey();
                 //如果被限制
-                dealTM();
+                if ($('.sold-out-tit:contains(此商品已下架)')) {
+                    dealErrorDID()
+                } else if ($("#J_LinkBasket")) {//去超市购物车
+                    dealErrorDID()
+                } else {
+                    dealTM();
+                }
             } else if (location.host.includes('buy.tmall')) {
                 //如果有授权的话
                 // auth-btm
@@ -223,7 +229,6 @@ async function getLocalStorageValue(key) {
  *处理天猫详情
  */
 function dealTM() {
-    debugger
     let endSkuIndex;
     let skuContianer = $('.tb-sku');
 
@@ -240,25 +245,31 @@ function dealTM() {
         isTMSkuClickFinished(skuContianer, endSkuIndex)
     }
     //去购买之前再检查一遍 规格有没有漏掉的
-    if ($('[data-addfastbuy]')[0].classList.value === "noPost") {//当前地区不支持配送
+    if ($('[data-addfastbuy]')[0] && $('[data-addfastbuy]')[0].classList.value === "noPost") {//当前地区不支持配送
         dealErrorDID()
     } else {
-        setTimeout(() => {
-            $('[data-addfastbuy]')[0].click();
-            // TODO 检查天猫未登录状态 并登录
-            /*
-             setInterval(()=>{
-                 if($("[class='fm-button fm-submit password-login']")){
-                     // $("#fm-login-id").val(USER_NAME)
-                     document.getElementById("fm-login-id").value= USER_NAME
-                     document.getElementById("fm-login-password").value= PASSWORD
-                     // $("#fm-login-password").val(PASSWORD)
-                     setTimeout(() => {
-                         $("[class='fm-button fm-submit password-login']").click()
-                     }, getRandomFactor())
-                 }
-             },500)*/
-        }, getRandomFactor(800))
+        if ($("#J_LinkBasket")) {//去超市购物车
+            $("#J_LinkBasket")[0].click();
+        } else {
+            setTimeout(() => {
+                $('[data-addfastbuy]')[0].click();
+                // TODO 检查天猫未登录状态 并登录
+                /*
+                 setInterval(()=>{
+                     if($("[class='fm-button fm-submit password-login']")){
+                         // $("#fm-login-id").val(USER_NAME)
+                         document.getElementById("fm-login-id").value= USER_NAME
+                         document.getElementById("fm-login-password").value= PASSWORD
+                         // $("#fm-login-password").val(PASSWORD)
+                         setTimeout(() => {
+                             $("[class='fm-button fm-submit password-login']").click()
+                         }, getRandomFactor())
+                     }
+                 },500)*/
+            }, getRandomFactor(800))
+        }
+
+
     }
 
 
