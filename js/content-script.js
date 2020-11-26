@@ -1,83 +1,148 @@
 const BASIC_TIME = 1500; //点击默认基础操作时间
 const BASIC_FACTOR = 400;//点击默认随机因子
+
 document.addEventListener('DOMContentLoaded', function () {
     console.log('天天购物插件');
     $(document).ready(function () {
-        setDidKey();
-        setTimeout(() => {
-            if (location.host.includes('www.baidu.com')) {
-                // let result = queryErrorDids()
-                // alert(JSON.stringify(result))
-            }
-            if (location.host.includes('login.taobao.com')) {
-                //登录
-                // $("#fm-login-id").val(USER_NAME)
-                // $("#fm-login-password").val(PASSWORD)
 
-                // setTimeout(() => {
-                //     $("[class='fm-button fm-submit password-login']").click()
-                // }, getRandomFactor())
-
-            } else if (location.host.includes('detail.tmall')) {
-                createHintMessage()
-                setDidKey();
-                //如果被限制
-                if ($('.sold-out-tit:contains(此商品已下架)')) {
-                    dealErrorDID()
-                } else if ($("#J_LinkBasket")) {//去超市购物车
-                    dealErrorDID()
-                } else {
-                    dealTM();
-                }
-            } else if (location.host.includes('buy.tmall')) {
-                createHintMessage()
-                //如果有授权的话
-                // auth-btm
-                closeAuthWindow();
-
-                let price = getFinallyPrice();
-                if (price) {
-                    getData("STORAGE_DID", price)
-                } else {
-                    setTimeout(() => {
-                        $('#goods_price').text(`该商品对当前设备和账号做限制了`)
-                    }, 3000)//8s之后还未获取到，就说明账号被限制了
-                }
-            }
-            else if (location.host === 'item.taobao.com') {
-                createHintMessage()
-                dealTB();
-            } else if (location.host === 'buy.taobao.com') {
-                createHintMessage()
-                let price = getFinallyPrice();
-                if (price) {
-                    getData("STORAGE_DID", price)
-                } else {
-                    setTimeout(() => {
-                        $('#goods_price').text(`该商品对当前设备和账号做限制了`)
-
-                    }, 3000)//8s之后还未获取到，就说明账号被限制了
-                }
-            } else if (location.host === "uland.taobao.com") { //粉丝福利购，领券
-                createHintMessage()
-                setTimeout(() => {
-                    if ($('div:contains(立即领券)').css('display')) {
-                        setTimeout(() => {
-                            //立即领券
-                            $('div:contains(立即领券)').parent().click()
-                        }, getRandomFactor(800))
-                    } else if ($('.err-tip')[0] && $('.err-tip')[0].innerHTML === '宝贝不见了') {//宝贝不见了
-                        dealErrorDID();
-                    } else {
-                        $('.item-img-con').click()
+        let parseObj = parseQuery(location.href);
+        let did = parseObj.did;
+        let did_array = parseObj.did_array;
+        if (did && did_array) { //第一个打开的页面还没有存上
+            dealDomain();//处理不同域名页面
+        } else {
+            getLocalStorageValue("TAB_DID").then(resp => {//本地存储的tabId 窗口用于爬取，其他的不做处理
+                getCurrentTabId().then(currentTabId => {
+                    if (resp['TAB_DID'] === currentTabId) {
+                        dealDomain();//处理不同域名页面
                     }
-                }, 800)
-            } else if (location.host === 's.click.taobao.com') {
-
-            }
-        }, 1000)
+                })
+            });
+        }
     });
 });
+
+function dealDomain() {
+    setTimeout(() => {
+        if (location.host.includes('www.baidu.com')) {
+            // let result = queryErrorDids()
+            // alert(JSON.stringify(result))
+        }
+        if (location.host.includes('login.taobao.com')) {
+            //登录
+            // $("#fm-login-id").val(USER_NAME)
+            // $("#fm-login-password").val(PASSWORD)
+
+            // setTimeout(() => {
+            //     $("[class='fm-button fm-submit password-login']").click()
+            // }, getRandomFactor())
+
+        } else if (location.host.includes('detail.tmall')) {
+            setDidKey();
+
+            getLocalStorageValue("STORAGE_DID").then(resp => {
+                if (resp['STORAGE_DID']) {
+                    createHintMessage()
+                    if ($('.sold-out-tit:contains(此商品已下架)') && $('.sold-out-tit:contains(此商品已下架)').css('display')) {
+                        dealErrorDID()
+                    } else if ($("#J_LinkBasket:contains(加入超市购物车)") && $("#J_LinkBasket:contains(加入超市购物车)").css('display')
+                    ) {//去超市购物车
+                        dealErrorDID()
+                    } else if ($("#J_LinkBuy:contains(立即购买)")) {
+                        dealTM();
+                    } else {
+                        dealErrorDID()
+                    }
+                }
+            });
+
+        } else if (location.host.includes('buy.tmall')) {
+
+            getLocalStorageValue("STORAGE_DID").then(resp => {
+                if (resp['STORAGE_DID']) {
+                    createHintMessage()
+                    //如果有授权的话
+                    // auth-btm
+                    closeAuthWindow();
+                    let price = getFinallyPrice();
+                    if (price) {
+                        getData("STORAGE_DID", price)
+                    } else {
+                        setTimeout(() => {
+                            $('#goods_price').text(`该商品对当前设备和账号做限制了`)
+                        }, 3000)//8s之后还未获取到，就说明账号被限制了
+                    }
+                }
+            });
+
+        }
+        else if (location.host === 'item.taobao.com') {
+            setDidKey();
+
+            getLocalStorageValue("STORAGE_DID").then(resp => {
+                if (resp['STORAGE_DID']) {
+                    createHintMessage()
+                    dealTB();
+                }
+            })
+        } else if (location.host === 'buy.taobao.com') {
+            setDidKey();
+
+            getLocalStorageValue("STORAGE_DID").then(resp => {
+                if (resp['STORAGE_DID']) {
+                    createHintMessage()
+                    let price = getFinallyPrice();
+                    if (price) {
+                        getData("STORAGE_DID", price)
+                    } else {
+                        setTimeout(() => {
+                            $('#goods_price').text(`该商品对当前设备和账号做限制了`)
+
+                        }, 3000)//8s之后还未获取到，就说明账号被限制了
+                    }
+
+                }
+            })
+        } else if (location.host === "uland.taobao.com") { //粉丝福利购，领券
+            setDidKey();
+            createHintMessage();
+            setTimeout(() => {
+                if ($('div:contains(立即领券)').css('display')) {
+                    setTimeout(() => {
+                        //立即领券
+                        $('div:contains(立即领券)').parent().click()
+                    }, getRandomFactor(800))
+                } else if ($('.err-tip')[0] && $('.err-tip')[0].innerHTML === '宝贝不见了') {//宝贝不见了
+                    dealErrorDID();
+                } else {
+                    $('.item-img-con').click()
+                }
+            }, 800)
+        } else if (location.host === 's.click.taobao.com') {
+            setDidKey();
+        }
+    }, 1000)
+}
+
+
+/**
+ * 获取当前tabId
+ * @returns {Promise<any>}
+ */
+async function getCurrentTabId() {
+    return new Promise((resolve, reject) => {
+        try {
+
+            chrome.extension.sendMessage({type: 'getTabId'}, function (res) {
+                // saveObject({"TAB_DID": res.tabId})
+                resolve(res.tabId);
+            });
+        } catch (ex) {
+            reject(ex);
+        }
+    });
+
+}
 
 
 /**
@@ -93,9 +158,27 @@ function saveText(filename, text) {
 }
 
 /**
+ * 保存key value
+ * @param obj
+ * obj
+ * eg.{
+ *       "STORAGE_DID": did,
+ *       "TAB_DID": did,
+ *   }
+ */
+function saveObject(obj) {
+    chrome.storage.local.set(obj, function () {
+    });
+}
+
+
+/**
  *上报爆料的did
  */
 async function setDidKey() {
+    /**
+     * @type {{}}
+     */
     let parseObj = parseQuery(location.href);
     let parseReferrerObj = parseQuery(document.referrer);
     let did = parseObj.did;
@@ -106,20 +189,24 @@ async function setDidKey() {
     if (!did_array) {
         did_array = parseReferrerObj.did_array
     }
+
     if (did && did_array) {
+
+        chrome.extension.sendMessage({type: 'getTabId'}, function (res) {
+            saveObject({"TAB_DID": res.tabId})
+        });
+
         chrome.storage.local.set({
             "STORAGE_DID": did,
-            "STORAGE_ARRAY": did_array,
         }, function () {
             console.log('Value is set to' + did);
         });
 
         const gooodsList = await getLocalStorageValue("STORAGE_GOOODS_LIST");
-        const storage_array = await getLocalStorageValue("STORAGE_ARRAY");
         if (!(gooodsList && gooodsList.length)) {//如果没有数据
             chrome.runtime.sendMessage({
                     type: "request",
-                    url: `http://api.tiantiandr.cn/admin/v1/disclosure/query_sync_goods?did_array=${storage_array['STORAGE_ARRAY']}`,
+                    url: `http://api.tiantiandr.cn/admin/v1/disclosure/query_sync_goods?did_array=${did_array}`,
                     method: "GET"
                 },
                 function (res) {
@@ -127,7 +214,14 @@ async function setDidKey() {
                 });
         }
     }
-
+    /*else {
+           chrome.storage.local.set({
+               "STORAGE_DID": null,
+               "STORAGE_GOOODS_LIST": null
+           }, function () {
+               console.log('Value is set to' + did);
+           });
+       }*/
 
     // /**
     //  * 读取本地文件
@@ -160,17 +254,17 @@ function createHintMessage() {
     $("#popWinClose").click(function () {
         $("#maskTop").hide()
     });
-    chrome.storage.onChanged.addListener(function (changes, namespace) {
-        for (key in changes) {
-            var storageChange = changes[key];
-            console.log('存储键“%s”（位于“%s”命名空间中）已更改。' +
-                '原来的值为“%s”，新的值为“%s”。',
-                key,
-                namespace,
-                storageChange.oldValue,
-                storageChange.newValue);
-        }
-    });
+    // chrome.storage.onChanged.addListener(function (changes, namespace) {
+    //     for (key in changes) {
+    //         var storageChange = changes[key];
+    //         console.log('存储键“%s”（位于“%s”命名空间中）已更改。' +
+    //             '原来的值为“%s”，新的值为“%s”。',
+    //             key,
+    //             namespace,
+    //             storageChange.oldValue,
+    //             storageChange.newValue);
+    //     }
+    // });
 }
 
 /**
@@ -181,7 +275,6 @@ async function getData(storage_key, price) {
     //将获取到的价格显示到提示框里边
     $('#goods_price').html(`当前商品价格<font style="font-size: 32px;color: RED;">${price}</font>，<br>正在上报价格，上报完毕之后会自动关闭`)
     const result = await getLocalStorageValue(storage_key);
-    const gooodsList = await getLocalStorageValue("STORAGE_GOOODS_LIST");
     setTimeout(() => {
         chrome.runtime.sendMessage({
                 type: "request",
@@ -203,7 +296,6 @@ async function getData(storage_key, price) {
                         type: "close",
                         did: result["STORAGE_DID"],
                         tabId,
-                        gooodsList
                     });
                 });
             });
@@ -252,7 +344,7 @@ function dealTM() {
     if ($('[data-addfastbuy]')[0] && $('[data-addfastbuy]')[0].classList.value === "noPost") {//当前地区不支持配送
         dealErrorDID()
     } else {
-        if ($("#J_LinkBasket")) {//去超市购物车
+        if ($("#J_LinkBasket:contains(加入超市购物车)") && $("#J_LinkBasket:contains(加入超市购物车)").css('display')) {//去超市购物车
             $("#J_LinkBasket")[0].click();
         } else {
             setTimeout(() => {
@@ -285,16 +377,14 @@ function dealTM() {
  */
 async function dealErrorDID() {
     const result = await getLocalStorageValue("STORAGE_DID");
-    saveErrorDid(result["STORAGE_DID"])
-    //TODO 上报error的爆料
-    const gooodsList = await getLocalStorageValue("STORAGE_GOOODS_LIST");
+    // saveErrorDid(result["STORAGE_DID"])
+    // TODO 上报error的爆料
     chrome.extension.sendMessage({type: 'getTabId'}, function (res) {//关闭当前页面 抓取下一个
         tabId = res.tabId;
         chrome.runtime.sendMessage({
             type: "close",
             did: result["STORAGE_DID"],
-            tabId,
-            gooodsList
+            tabId
         });
     });
 }

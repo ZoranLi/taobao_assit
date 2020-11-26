@@ -3,35 +3,47 @@ chrome.runtime.onMessage.addListener(function (message, callback, sendResponse) 
         // chrome.tabs.getSelected(null, function (tab) {
         //     chrome.tabs.remove(tab.id);
         // });
-        chrome.tabs.remove(message.tabId);
+        //关闭窗口
+        // chrome.tabs.remove(message.tabId);
+        getLocalStorageValue("STORAGE_GOOODS_LIST").then(resp => {
+            if (resp && resp["STORAGE_GOOODS_LIST"]) {
+                let goodsList = resp["STORAGE_GOOODS_LIST"]
+                // alert(JSON.stringify(goodsList))
+                {
+                    // let index = goodsList.findIndex((e) => parseQuery(e).did === message.did);
+                    let index = -1;
+                    goodsList.map((ele, anchor) => {
+                        if (parseQuery(ele).did === message.did) {
+                            index = anchor
+                        }
+                    });
 
-        let goodsList = JSON.parse(message.gooodsList["STORAGE_GOOODS_LIST"]);
-        if (goodsList) {
-            // let index = goodsList.findIndex((e) => parseQuery(e).did === message.did);
-            let index = null;
-            goodsList.map((ele, anchor) => {
-                if (parseQuery(ele).did === message.did) {
-                    index = anchor
-                }
-            });
-
-            if (index === goodsList.length - 1 || index === null) { // 爬到最后一条清数据 //如果没找到
-                chrome.storage.local.set({"STORAGE_GOOODS_LIST": null}, function () {
-                });
-            } else {
-                deleteElement(message.did)
-            }
-
-            if (index < goodsList.length) {
-
-                setTimeout(() => {
-                    let url = goodsList[index + 1];
-                    if (url) {
-                        chrome.tabs.create({url: url, active: false});
+                    if (index === goodsList.length - 1 || index === null) { // 爬到最后一条清数据 //如果没找到
+                        chrome.storage.local.set({"STORAGE_GOOODS_LIST": null}, function () {
+                        });
+                    } else {
+                        deleteElement(message.did)
                     }
-                }, 1500)
+                    alert(index)
+                    if (index < goodsList.length) {
+                        setTimeout(() => {
+                            let url = goodsList[index + 1];
+                            if (url) {
+                                // chrome.tabs.create({url: url, active: false});
+                                chrome.tabs.update(message.tabId, {url: url})
+                            }
+                        }, 1500)
+                    } else {
+                        chrome.tabs.remove(message.tabId);
+                    }
+                }
+
             }
-        }
+        });
+        // if (typeof goodsList === 'string') {
+        //     goodsList = JSON.parse(goodsList)
+        // }
+        // alert(JSON.stringify(goodsList))
     }
 });
 
@@ -61,7 +73,8 @@ function fetchRemoteData(url, method, body, callback) {
     xhr.onreadystatechange = () => {
         if (xhr.readyState === 4) {
             var resp = JSON.stringify(xhr.responseText)
-            if (resp.result === 'OK') {
+            resp = JSON.parse(resp)
+            if (resp && resp.includes('result')) {
                 deleteElement(body.did);
                 callback(resp)
             } else {
@@ -76,17 +89,22 @@ function fetchRemoteData(url, method, body, callback) {
 
 async function deleteElement(did) {
     let goodsList = await getLocalStorageValue("STORAGE_GOOODS_LIST");
-    goodsList = JSON.parse(goodsList['STORAGE_GOOODS_LIST'])
+    goodsList = goodsList['STORAGE_GOOODS_LIST']
 
-    //上报完成就删掉本地list
-    let tempIndex = goodsList.findIndex((e) => {
-        return e.includes(did)
-    });
-    if (tempIndex !== -1) {
-        goodsList.splice(tempIndex, 1);
-        chrome.storage.local.set({"STORAGE_GOOODS_LIST": goodsList}, function () {
+    if (typeof  goodsList === 'string') {
+        goodsList = JSON.parse(goodsList)
+    }
+
+    if (goodsList && goodsList.length) {
+        //上报完成就删掉本地list
+        let tempIndex = goodsList.findIndex((e) => {
+            return e.includes(did)
         });
-
+        if (tempIndex !== -1) {
+            goodsList.splice(tempIndex, 1);
+            chrome.storage.local.set({"STORAGE_GOOODS_LIST": goodsList}, function () {
+            });
+        }
     }
 }
 
