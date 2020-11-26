@@ -1,5 +1,7 @@
 const BASIC_TIME = 1500; //点击默认基础操作时间
 const BASIC_FACTOR = 400;//点击默认随机因子
+const BASIC_URL = 'http://apis.xiaohongchun.com/';//点击默认随机因子
+// const BASIC_URL = 'http://api.tiantiandr.cn/';//点击默认随机因子
 
 document.addEventListener('DOMContentLoaded', function () {
     console.log('天天购物插件');
@@ -206,7 +208,7 @@ async function setDidKey() {
         if (!(gooodsList && gooodsList.length)) {//如果没有数据
             chrome.runtime.sendMessage({
                     type: "request",
-                    url: `http://api.tiantiandr.cn/admin/v1/disclosure/query_sync_goods?did_array=${did_array}`,
+                    url: `${BASIC_URL}admin/v1/disclosure/query_sync_goods?did_array=${did_array}`,
                     method: "GET"
                 },
                 function (res) {
@@ -278,7 +280,7 @@ async function getData(storage_key, price) {
     setTimeout(() => {
         chrome.runtime.sendMessage({
                 type: "request",
-                url: 'http://api.tiantiandr.cn/admin/v1/disclosure/create_expand',
+                url: `${BASIC_URL}admin/v1/disclosure/create_expand`,
                 body: {
                     "did": result["STORAGE_DID"],
                     "e_type": 0,
