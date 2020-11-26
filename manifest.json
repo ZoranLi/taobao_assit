@@ -47,6 +47,7 @@
     "http://www.baidu.com/",
     "https://www.baidu.com/",
     "http://api.tiantiandr.cn/",
+    "http://apis.xiaohongchun.com/",
     "https://xhc-xcx.oss-cn-beijing.aliyuncs.com/"
   ],
   "content_scripts": [
