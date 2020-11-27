@@ -351,7 +351,15 @@ function dealTM() {
         } else {
             setTimeout(() => {
                 $('[data-addfastbuy]')[0].click();
-                // TODO 检查天猫未登录状态 并登录
+
+                setInterval(() => {//有弹窗
+                    let total = $('.total')[0];
+                    if (total.innerHTML && total.innerHTML.includes('合计')) {
+                        $('[data-addfastbuy]')[0].click();
+                    }
+                }, 500)
+
+                //检查天猫未登录状态 并登录
                 /*
                  setInterval(()=>{
                      if($("[class='fm-button fm-submit password-login']")){
@@ -365,6 +373,8 @@ function dealTM() {
                      }
                  },500)*/
             }, getRandomFactor(800))
+
+
         }
 
 
@@ -448,7 +458,7 @@ function isTMSkuClickFinished(element, endSkuIndex) {
                 }
             } else {
                 delay(getRandomFactor()).then(function () {
-                    let sku = liElem[0]?liElem[0].getElementsByTagName('a'):null
+                    let sku = liElem[0] ? liElem[0].getElementsByTagName('a') : null
                     if (sku) {
                         sku[0].click()
                         return delay(getRandomFactor()); //
