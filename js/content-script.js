@@ -1,4 +1,4 @@
-const BASIC_TIME = 1500; //点击默认基础操作时间
+const BASIC_TIME = 2200; //点击默认基础操作时间
 const BASIC_FACTOR = 400;//点击默认随机因子
 const BASIC_URL = 'http://apis.xiaohongchun.com/';//点击默认随机因子
 // const BASIC_URL = 'http://api.tiantiandr.cn/';//点击默认随机因子
@@ -433,12 +433,26 @@ function isTMSkuClickFinished(element, endSkuIndex) {
         if (i < endSkuIndex) {
             let liElem = n.getElementsByTagName('li');
             liElem = filterSaleOut(liElem);
-            if (liElem && liElem[0] && liElem[0].textContent.includes('已选中')) {
 
-            } else if (liElem && liElem[0]) {
+            let hasSelectedArray = liElem.filter(g => {
+                return g.textContent.includes('已选')
+            });
+            if (hasSelectedArray && hasSelectedArray.length) {
+                if ($(".ensureText")[0]) {
+                    let demo = window.getComputedStyle($(".ensureText")[0], null);
+                    if (demo.display !== 'none') {
+                        setTimeout(() => {
+                            $('[data-addfastbuy]')[0].click();
+                        }, getRandomFactor())
+                    }
+                }
+            } else {
                 delay(getRandomFactor()).then(function () {
-                    liElem[0].getElementsByTagName('a')[0].click()
-                    return delay(getRandomFactor()); //
+                    let sku = liElem[0]?liElem[0].getElementsByTagName('a'):null
+                    if (sku) {
+                        sku[0].click()
+                        return delay(getRandomFactor()); //
+                    }
                 }).then(function () {
                     if ($(".ensureText")[0]) {
                         let demo = window.getComputedStyle($(".ensureText")[0], null);
